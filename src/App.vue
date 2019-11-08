@@ -3,40 +3,55 @@
     <!-- panggil komponennya disini -->
     <navBar :logo-home="logoHome" @isLogin="logOut" :isLogin="isLogin"></navBar>
     <!-- Login -->
-    <div v-if="isLogin==false">
-      <form v-on:submit.prevent="login">
-        <div class="form-group">
-          <label>Email address</label>
-          <input type="email" class="form-control" placeholder="Enter email" v-model="email" />
+    <div class="container mt-5" >
+      <div class="row" >
+        <div class="form-group col-sm-8 offset-sm-2 border rounded py-3" style="background-color:#E9F1F7;" >
+          <div v-if="isLogin==false">
+            <h2 class="text-center" >Login Form</h2>
+            <form v-on:submit.prevent="login" >
+              <div class="form-group" >
+                <label>Email address</label>
+                <input type="email" class="form-control" placeholder="Enter email" v-model="email" />
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-control" placeholder="Password" v-model="password" />
+              </div>
+              <input class="btn btn-secondary" type="submit" name="Login" />
+            </form>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" class="form-control" placeholder="Password" v-model="password" />
-        </div>
-        <input type="submit" name="submit" />
-      </form>
+      </div>
     </div>
+    
     <!-- Register -->
-    <div v-if="isRegister">
-      <form v-on:submit.prevent="register">
-        <div class="form-group">
-          <label>Email address</label>
-          <input type="email" class="form-control" placeholder="Enter email" v-model="email" />
-          <small
-            id="emailHelp"
-            class="form-text text-muted"
-          >We'll never share your email with anyone else.</small>
-        </div>
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" class="form-control" placeholder="Enter username" v-model="username" />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" class="form-control" placeholder="Password" v-model="password" />
-        </div>
-        <input type="submit" name="submit" />
-      </form>
+    <div class="container mt-5">
+      <div class="row">
+        <div class="form-group col-sm-8 offset-sm-2 border rounded py-3" style="background-color:#E9F1F7;">
+          <div v-if="isRegister">
+            <h2 class="text-center">Register Form</h2>
+            <form v-on:submit.prevent="register">
+              <div class="form-group">
+                <label>Email address</label>
+                <input type="email" class="form-control" placeholder="Enter email" v-model="email" />
+                <small
+                  id="emailHelp"
+                  class="form-text text-muted"
+                >We'll never share your email with anyone else.</small>
+              </div>
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" class="form-control" placeholder="Enter username" v-model="username" />
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-control" placeholder="Password" v-model="password" />
+              </div>
+              <input type="submit" name="submit"  class="btn "/>
+            </form>
+          </div>
+      </div>
+      </div>
     </div>
 
     <formImage @getPicture="getPictures" v-if="isLogin"></formImage>
