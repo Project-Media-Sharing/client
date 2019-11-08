@@ -149,6 +149,7 @@ export default {
                 showConfirmButton: false,
                 timer: 1500
             })
+            this.$emit("getPicture");
             console.log(result);
         })
         .catch(( err ) => {

@@ -20,5 +20,8 @@ export default {
 </script>
 
 <style>
+footer {
+  position: 'sticky-bottom';
+}
 
 </style>
