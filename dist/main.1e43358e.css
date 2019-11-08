@@ -19,13 +19,15 @@ a[data-v-e335be] {
 .btn:hover {
     color: grey;
 }
-button[data-v-90999f]:hover {
+button:hover {
   color: aliceblue;
 }
-button[data-v-90999f] {
+
+button {
   margin: 2px;
 }
-a[data-v-90999f] {
+
+a {
   color: white;
 }
 footer {
