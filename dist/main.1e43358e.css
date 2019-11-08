@@ -1,4 +1,21 @@
-footer {
-    bottom: 0;
-    background-color: rgb(54, 49, 44);
+nav[data-v-2dd3aa] {
+  background-color: #392F5A;
+}
+a[data-v-2dd3aa] {
+  color: white;
+}
+.btn[data-v-2dd3aa] {
+  background-color: white;
+  color: #392F5A;
+}
+.btn[data-v-2dd3aa]:hover {
+  color: grey;
+}
+.btn {
+  background-color : #392F5A;
+  color : white;
+}
+
+.btn:hover {
+    color: grey;
 }

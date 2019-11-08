@@ -8542,7 +8542,1720 @@ if (inBrowser) {
 
 var _default = Vue;
 exports.default = _default;
-},{}],"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
+},{}],"node_modules/axios/lib/helpers/bind.js":[function(require,module,exports) {
+'use strict';
+
+module.exports = function bind(fn, thisArg) {
+  return function wrap() {
+    var args = new Array(arguments.length);
+    for (var i = 0; i < args.length; i++) {
+      args[i] = arguments[i];
+    }
+    return fn.apply(thisArg, args);
+  };
+};
+
+},{}],"node_modules/is-buffer/index.js":[function(require,module,exports) {
+/*!
+ * Determine if an object is a Buffer
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
+module.exports = function isBuffer(obj) {
+  return obj != null && obj.constructor != null && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj);
+};
+},{}],"node_modules/axios/lib/utils.js":[function(require,module,exports) {
+'use strict';
+
+var bind = require('./helpers/bind');
+var isBuffer = require('is-buffer');
+
+/*global toString:true*/
+
+// utils is a library of generic helper functions non-specific to axios
+
+var toString = Object.prototype.toString;
+
+/**
+ * Determine if a value is an Array
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an Array, otherwise false
+ */
+function isArray(val) {
+  return toString.call(val) === '[object Array]';
+}
+
+/**
+ * Determine if a value is an ArrayBuffer
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an ArrayBuffer, otherwise false
+ */
+function isArrayBuffer(val) {
+  return toString.call(val) === '[object ArrayBuffer]';
+}
+
+/**
+ * Determine if a value is a FormData
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an FormData, otherwise false
+ */
+function isFormData(val) {
+  return (typeof FormData !== 'undefined') && (val instanceof FormData);
+}
+
+/**
+ * Determine if a value is a view on an ArrayBuffer
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
+ */
+function isArrayBufferView(val) {
+  var result;
+  if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
+    result = ArrayBuffer.isView(val);
+  } else {
+    result = (val) && (val.buffer) && (val.buffer instanceof ArrayBuffer);
+  }
+  return result;
+}
+
+/**
+ * Determine if a value is a String
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a String, otherwise false
+ */
+function isString(val) {
+  return typeof val === 'string';
+}
+
+/**
+ * Determine if a value is a Number
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Number, otherwise false
+ */
+function isNumber(val) {
+  return typeof val === 'number';
+}
+
+/**
+ * Determine if a value is undefined
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if the value is undefined, otherwise false
+ */
+function isUndefined(val) {
+  return typeof val === 'undefined';
+}
+
+/**
+ * Determine if a value is an Object
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an Object, otherwise false
+ */
+function isObject(val) {
+  return val !== null && typeof val === 'object';
+}
+
+/**
+ * Determine if a value is a Date
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Date, otherwise false
+ */
+function isDate(val) {
+  return toString.call(val) === '[object Date]';
+}
+
+/**
+ * Determine if a value is a File
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a File, otherwise false
+ */
+function isFile(val) {
+  return toString.call(val) === '[object File]';
+}
+
+/**
+ * Determine if a value is a Blob
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Blob, otherwise false
+ */
+function isBlob(val) {
+  return toString.call(val) === '[object Blob]';
+}
+
+/**
+ * Determine if a value is a Function
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Function, otherwise false
+ */
+function isFunction(val) {
+  return toString.call(val) === '[object Function]';
+}
+
+/**
+ * Determine if a value is a Stream
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Stream, otherwise false
+ */
+function isStream(val) {
+  return isObject(val) && isFunction(val.pipe);
+}
+
+/**
+ * Determine if a value is a URLSearchParams object
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a URLSearchParams object, otherwise false
+ */
+function isURLSearchParams(val) {
+  return typeof URLSearchParams !== 'undefined' && val instanceof URLSearchParams;
+}
+
+/**
+ * Trim excess whitespace off the beginning and end of a string
+ *
+ * @param {String} str The String to trim
+ * @returns {String} The String freed of excess whitespace
+ */
+function trim(str) {
+  return str.replace(/^\s*/, '').replace(/\s*$/, '');
+}
+
+/**
+ * Determine if we're running in a standard browser environment
+ *
+ * This allows axios to run in a web worker, and react-native.
+ * Both environments support XMLHttpRequest, but not fully standard globals.
+ *
+ * web workers:
+ *  typeof window -> undefined
+ *  typeof document -> undefined
+ *
+ * react-native:
+ *  navigator.product -> 'ReactNative'
+ * nativescript
+ *  navigator.product -> 'NativeScript' or 'NS'
+ */
+function isStandardBrowserEnv() {
+  if (typeof navigator !== 'undefined' && (navigator.product === 'ReactNative' ||
+                                           navigator.product === 'NativeScript' ||
+                                           navigator.product === 'NS')) {
+    return false;
+  }
+  return (
+    typeof window !== 'undefined' &&
+    typeof document !== 'undefined'
+  );
+}
+
+/**
+ * Iterate over an Array or an Object invoking a function for each item.
+ *
+ * If `obj` is an Array callback will be called passing
+ * the value, index, and complete array for each item.
+ *
+ * If 'obj' is an Object callback will be called passing
+ * the value, key, and complete object for each property.
+ *
+ * @param {Object|Array} obj The object to iterate
+ * @param {Function} fn The callback to invoke for each item
+ */
+function forEach(obj, fn) {
+  // Don't bother if no value provided
+  if (obj === null || typeof obj === 'undefined') {
+    return;
+  }
+
+  // Force an array if not already something iterable
+  if (typeof obj !== 'object') {
+    /*eslint no-param-reassign:0*/
+    obj = [obj];
+  }
+
+  if (isArray(obj)) {
+    // Iterate over array values
+    for (var i = 0, l = obj.length; i < l; i++) {
+      fn.call(null, obj[i], i, obj);
+    }
+  } else {
+    // Iterate over object keys
+    for (var key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        fn.call(null, obj[key], key, obj);
+      }
+    }
+  }
+}
+
+/**
+ * Accepts varargs expecting each argument to be an object, then
+ * immutably merges the properties of each object and returns result.
+ *
+ * When multiple objects contain the same key the later object in
+ * the arguments list will take precedence.
+ *
+ * Example:
+ *
+ * ```js
+ * var result = merge({foo: 123}, {foo: 456});
+ * console.log(result.foo); // outputs 456
+ * ```
+ *
+ * @param {Object} obj1 Object to merge
+ * @returns {Object} Result of all merge properties
+ */
+function merge(/* obj1, obj2, obj3, ... */) {
+  var result = {};
+  function assignValue(val, key) {
+    if (typeof result[key] === 'object' && typeof val === 'object') {
+      result[key] = merge(result[key], val);
+    } else {
+      result[key] = val;
+    }
+  }
+
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    forEach(arguments[i], assignValue);
+  }
+  return result;
+}
+
+/**
+ * Function equal to merge with the difference being that no reference
+ * to original objects is kept.
+ *
+ * @see merge
+ * @param {Object} obj1 Object to merge
+ * @returns {Object} Result of all merge properties
+ */
+function deepMerge(/* obj1, obj2, obj3, ... */) {
+  var result = {};
+  function assignValue(val, key) {
+    if (typeof result[key] === 'object' && typeof val === 'object') {
+      result[key] = deepMerge(result[key], val);
+    } else if (typeof val === 'object') {
+      result[key] = deepMerge({}, val);
+    } else {
+      result[key] = val;
+    }
+  }
+
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    forEach(arguments[i], assignValue);
+  }
+  return result;
+}
+
+/**
+ * Extends object a by mutably adding to it the properties of object b.
+ *
+ * @param {Object} a The object to be extended
+ * @param {Object} b The object to copy properties from
+ * @param {Object} thisArg The object to bind function to
+ * @return {Object} The resulting value of object a
+ */
+function extend(a, b, thisArg) {
+  forEach(b, function assignValue(val, key) {
+    if (thisArg && typeof val === 'function') {
+      a[key] = bind(val, thisArg);
+    } else {
+      a[key] = val;
+    }
+  });
+  return a;
+}
+
+module.exports = {
+  isArray: isArray,
+  isArrayBuffer: isArrayBuffer,
+  isBuffer: isBuffer,
+  isFormData: isFormData,
+  isArrayBufferView: isArrayBufferView,
+  isString: isString,
+  isNumber: isNumber,
+  isObject: isObject,
+  isUndefined: isUndefined,
+  isDate: isDate,
+  isFile: isFile,
+  isBlob: isBlob,
+  isFunction: isFunction,
+  isStream: isStream,
+  isURLSearchParams: isURLSearchParams,
+  isStandardBrowserEnv: isStandardBrowserEnv,
+  forEach: forEach,
+  merge: merge,
+  deepMerge: deepMerge,
+  extend: extend,
+  trim: trim
+};
+
+},{"./helpers/bind":"node_modules/axios/lib/helpers/bind.js","is-buffer":"node_modules/is-buffer/index.js"}],"node_modules/axios/lib/helpers/buildURL.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+
+function encode(val) {
+  return encodeURIComponent(val).
+    replace(/%40/gi, '@').
+    replace(/%3A/gi, ':').
+    replace(/%24/g, '$').
+    replace(/%2C/gi, ',').
+    replace(/%20/g, '+').
+    replace(/%5B/gi, '[').
+    replace(/%5D/gi, ']');
+}
+
+/**
+ * Build a URL by appending params to the end
+ *
+ * @param {string} url The base of the url (e.g., http://www.google.com)
+ * @param {object} [params] The params to be appended
+ * @returns {string} The formatted url
+ */
+module.exports = function buildURL(url, params, paramsSerializer) {
+  /*eslint no-param-reassign:0*/
+  if (!params) {
+    return url;
+  }
+
+  var serializedParams;
+  if (paramsSerializer) {
+    serializedParams = paramsSerializer(params);
+  } else if (utils.isURLSearchParams(params)) {
+    serializedParams = params.toString();
+  } else {
+    var parts = [];
+
+    utils.forEach(params, function serialize(val, key) {
+      if (val === null || typeof val === 'undefined') {
+        return;
+      }
+
+      if (utils.isArray(val)) {
+        key = key + '[]';
+      } else {
+        val = [val];
+      }
+
+      utils.forEach(val, function parseValue(v) {
+        if (utils.isDate(v)) {
+          v = v.toISOString();
+        } else if (utils.isObject(v)) {
+          v = JSON.stringify(v);
+        }
+        parts.push(encode(key) + '=' + encode(v));
+      });
+    });
+
+    serializedParams = parts.join('&');
+  }
+
+  if (serializedParams) {
+    var hashmarkIndex = url.indexOf('#');
+    if (hashmarkIndex !== -1) {
+      url = url.slice(0, hashmarkIndex);
+    }
+
+    url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
+  }
+
+  return url;
+};
+
+},{"./../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/core/InterceptorManager.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+
+function InterceptorManager() {
+  this.handlers = [];
+}
+
+/**
+ * Add a new interceptor to the stack
+ *
+ * @param {Function} fulfilled The function to handle `then` for a `Promise`
+ * @param {Function} rejected The function to handle `reject` for a `Promise`
+ *
+ * @return {Number} An ID used to remove interceptor later
+ */
+InterceptorManager.prototype.use = function use(fulfilled, rejected) {
+  this.handlers.push({
+    fulfilled: fulfilled,
+    rejected: rejected
+  });
+  return this.handlers.length - 1;
+};
+
+/**
+ * Remove an interceptor from the stack
+ *
+ * @param {Number} id The ID that was returned by `use`
+ */
+InterceptorManager.prototype.eject = function eject(id) {
+  if (this.handlers[id]) {
+    this.handlers[id] = null;
+  }
+};
+
+/**
+ * Iterate over all the registered interceptors
+ *
+ * This method is particularly useful for skipping over any
+ * interceptors that may have become `null` calling `eject`.
+ *
+ * @param {Function} fn The function to call for each interceptor
+ */
+InterceptorManager.prototype.forEach = function forEach(fn) {
+  utils.forEach(this.handlers, function forEachHandler(h) {
+    if (h !== null) {
+      fn(h);
+    }
+  });
+};
+
+module.exports = InterceptorManager;
+
+},{"./../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/core/transformData.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+
+/**
+ * Transform the data for a request or a response
+ *
+ * @param {Object|String} data The data to be transformed
+ * @param {Array} headers The headers for the request or response
+ * @param {Array|Function} fns A single function or Array of functions
+ * @returns {*} The resulting transformed data
+ */
+module.exports = function transformData(data, headers, fns) {
+  /*eslint no-param-reassign:0*/
+  utils.forEach(fns, function transform(fn) {
+    data = fn(data, headers);
+  });
+
+  return data;
+};
+
+},{"./../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/cancel/isCancel.js":[function(require,module,exports) {
+'use strict';
+
+module.exports = function isCancel(value) {
+  return !!(value && value.__CANCEL__);
+};
+
+},{}],"node_modules/axios/lib/helpers/normalizeHeaderName.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('../utils');
+
+module.exports = function normalizeHeaderName(headers, normalizedName) {
+  utils.forEach(headers, function processHeader(value, name) {
+    if (name !== normalizedName && name.toUpperCase() === normalizedName.toUpperCase()) {
+      headers[normalizedName] = value;
+      delete headers[name];
+    }
+  });
+};
+
+},{"../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/core/enhanceError.js":[function(require,module,exports) {
+'use strict';
+
+/**
+ * Update an Error with the specified config, error code, and response.
+ *
+ * @param {Error} error The error to update.
+ * @param {Object} config The config.
+ * @param {string} [code] The error code (for example, 'ECONNABORTED').
+ * @param {Object} [request] The request.
+ * @param {Object} [response] The response.
+ * @returns {Error} The error.
+ */
+module.exports = function enhanceError(error, config, code, request, response) {
+  error.config = config;
+  if (code) {
+    error.code = code;
+  }
+
+  error.request = request;
+  error.response = response;
+  error.isAxiosError = true;
+
+  error.toJSON = function() {
+    return {
+      // Standard
+      message: this.message,
+      name: this.name,
+      // Microsoft
+      description: this.description,
+      number: this.number,
+      // Mozilla
+      fileName: this.fileName,
+      lineNumber: this.lineNumber,
+      columnNumber: this.columnNumber,
+      stack: this.stack,
+      // Axios
+      config: this.config,
+      code: this.code
+    };
+  };
+  return error;
+};
+
+},{}],"node_modules/axios/lib/core/createError.js":[function(require,module,exports) {
+'use strict';
+
+var enhanceError = require('./enhanceError');
+
+/**
+ * Create an Error with the specified message, config, error code, request and response.
+ *
+ * @param {string} message The error message.
+ * @param {Object} config The config.
+ * @param {string} [code] The error code (for example, 'ECONNABORTED').
+ * @param {Object} [request] The request.
+ * @param {Object} [response] The response.
+ * @returns {Error} The created error.
+ */
+module.exports = function createError(message, config, code, request, response) {
+  var error = new Error(message);
+  return enhanceError(error, config, code, request, response);
+};
+
+},{"./enhanceError":"node_modules/axios/lib/core/enhanceError.js"}],"node_modules/axios/lib/core/settle.js":[function(require,module,exports) {
+'use strict';
+
+var createError = require('./createError');
+
+/**
+ * Resolve or reject a Promise based on response status.
+ *
+ * @param {Function} resolve A function that resolves the promise.
+ * @param {Function} reject A function that rejects the promise.
+ * @param {object} response The response.
+ */
+module.exports = function settle(resolve, reject, response) {
+  var validateStatus = response.config.validateStatus;
+  if (!validateStatus || validateStatus(response.status)) {
+    resolve(response);
+  } else {
+    reject(createError(
+      'Request failed with status code ' + response.status,
+      response.config,
+      null,
+      response.request,
+      response
+    ));
+  }
+};
+
+},{"./createError":"node_modules/axios/lib/core/createError.js"}],"node_modules/axios/lib/helpers/parseHeaders.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+
+// Headers whose duplicates are ignored by node
+// c.f. https://nodejs.org/api/http.html#http_message_headers
+var ignoreDuplicateOf = [
+  'age', 'authorization', 'content-length', 'content-type', 'etag',
+  'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
+  'last-modified', 'location', 'max-forwards', 'proxy-authorization',
+  'referer', 'retry-after', 'user-agent'
+];
+
+/**
+ * Parse headers into an object
+ *
+ * ```
+ * Date: Wed, 27 Aug 2014 08:58:49 GMT
+ * Content-Type: application/json
+ * Connection: keep-alive
+ * Transfer-Encoding: chunked
+ * ```
+ *
+ * @param {String} headers Headers needing to be parsed
+ * @returns {Object} Headers parsed into an object
+ */
+module.exports = function parseHeaders(headers) {
+  var parsed = {};
+  var key;
+  var val;
+  var i;
+
+  if (!headers) { return parsed; }
+
+  utils.forEach(headers.split('\n'), function parser(line) {
+    i = line.indexOf(':');
+    key = utils.trim(line.substr(0, i)).toLowerCase();
+    val = utils.trim(line.substr(i + 1));
+
+    if (key) {
+      if (parsed[key] && ignoreDuplicateOf.indexOf(key) >= 0) {
+        return;
+      }
+      if (key === 'set-cookie') {
+        parsed[key] = (parsed[key] ? parsed[key] : []).concat([val]);
+      } else {
+        parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
+      }
+    }
+  });
+
+  return parsed;
+};
+
+},{"./../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/helpers/isURLSameOrigin.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+
+module.exports = (
+  utils.isStandardBrowserEnv() ?
+
+  // Standard browser envs have full support of the APIs needed to test
+  // whether the request URL is of the same origin as current location.
+    (function standardBrowserEnv() {
+      var msie = /(msie|trident)/i.test(navigator.userAgent);
+      var urlParsingNode = document.createElement('a');
+      var originURL;
+
+      /**
+    * Parse a URL to discover it's components
+    *
+    * @param {String} url The URL to be parsed
+    * @returns {Object}
+    */
+      function resolveURL(url) {
+        var href = url;
+
+        if (msie) {
+        // IE needs attribute set twice to normalize properties
+          urlParsingNode.setAttribute('href', href);
+          href = urlParsingNode.href;
+        }
+
+        urlParsingNode.setAttribute('href', href);
+
+        // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
+        return {
+          href: urlParsingNode.href,
+          protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
+          host: urlParsingNode.host,
+          search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
+          hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
+          hostname: urlParsingNode.hostname,
+          port: urlParsingNode.port,
+          pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
+            urlParsingNode.pathname :
+            '/' + urlParsingNode.pathname
+        };
+      }
+
+      originURL = resolveURL(window.location.href);
+
+      /**
+    * Determine if a URL shares the same origin as the current location
+    *
+    * @param {String} requestURL The URL to test
+    * @returns {boolean} True if URL shares the same origin, otherwise false
+    */
+      return function isURLSameOrigin(requestURL) {
+        var parsed = (utils.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
+        return (parsed.protocol === originURL.protocol &&
+            parsed.host === originURL.host);
+      };
+    })() :
+
+  // Non standard browser envs (web workers, react-native) lack needed support.
+    (function nonStandardBrowserEnv() {
+      return function isURLSameOrigin() {
+        return true;
+      };
+    })()
+);
+
+},{"./../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/helpers/cookies.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+
+module.exports = (
+  utils.isStandardBrowserEnv() ?
+
+  // Standard browser envs support document.cookie
+    (function standardBrowserEnv() {
+      return {
+        write: function write(name, value, expires, path, domain, secure) {
+          var cookie = [];
+          cookie.push(name + '=' + encodeURIComponent(value));
+
+          if (utils.isNumber(expires)) {
+            cookie.push('expires=' + new Date(expires).toGMTString());
+          }
+
+          if (utils.isString(path)) {
+            cookie.push('path=' + path);
+          }
+
+          if (utils.isString(domain)) {
+            cookie.push('domain=' + domain);
+          }
+
+          if (secure === true) {
+            cookie.push('secure');
+          }
+
+          document.cookie = cookie.join('; ');
+        },
+
+        read: function read(name) {
+          var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+          return (match ? decodeURIComponent(match[3]) : null);
+        },
+
+        remove: function remove(name) {
+          this.write(name, '', Date.now() - 86400000);
+        }
+      };
+    })() :
+
+  // Non standard browser env (web workers, react-native) lack needed support.
+    (function nonStandardBrowserEnv() {
+      return {
+        write: function write() {},
+        read: function read() { return null; },
+        remove: function remove() {}
+      };
+    })()
+);
+
+},{"./../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/adapters/xhr.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+var settle = require('./../core/settle');
+var buildURL = require('./../helpers/buildURL');
+var parseHeaders = require('./../helpers/parseHeaders');
+var isURLSameOrigin = require('./../helpers/isURLSameOrigin');
+var createError = require('../core/createError');
+
+module.exports = function xhrAdapter(config) {
+  return new Promise(function dispatchXhrRequest(resolve, reject) {
+    var requestData = config.data;
+    var requestHeaders = config.headers;
+
+    if (utils.isFormData(requestData)) {
+      delete requestHeaders['Content-Type']; // Let the browser set it
+    }
+
+    var request = new XMLHttpRequest();
+
+    // HTTP basic authentication
+    if (config.auth) {
+      var username = config.auth.username || '';
+      var password = config.auth.password || '';
+      requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
+    }
+
+    request.open(config.method.toUpperCase(), buildURL(config.url, config.params, config.paramsSerializer), true);
+
+    // Set the request timeout in MS
+    request.timeout = config.timeout;
+
+    // Listen for ready state
+    request.onreadystatechange = function handleLoad() {
+      if (!request || request.readyState !== 4) {
+        return;
+      }
+
+      // The request errored out and we didn't get a response, this will be
+      // handled by onerror instead
+      // With one exception: request that using file: protocol, most browsers
+      // will return status as 0 even though it's a successful request
+      if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
+        return;
+      }
+
+      // Prepare the response
+      var responseHeaders = 'getAllResponseHeaders' in request ? parseHeaders(request.getAllResponseHeaders()) : null;
+      var responseData = !config.responseType || config.responseType === 'text' ? request.responseText : request.response;
+      var response = {
+        data: responseData,
+        status: request.status,
+        statusText: request.statusText,
+        headers: responseHeaders,
+        config: config,
+        request: request
+      };
+
+      settle(resolve, reject, response);
+
+      // Clean up request
+      request = null;
+    };
+
+    // Handle browser request cancellation (as opposed to a manual cancellation)
+    request.onabort = function handleAbort() {
+      if (!request) {
+        return;
+      }
+
+      reject(createError('Request aborted', config, 'ECONNABORTED', request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Handle low level network errors
+    request.onerror = function handleError() {
+      // Real errors are hidden from us by the browser
+      // onerror should only fire if it's a network error
+      reject(createError('Network Error', config, null, request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Handle timeout
+    request.ontimeout = function handleTimeout() {
+      reject(createError('timeout of ' + config.timeout + 'ms exceeded', config, 'ECONNABORTED',
+        request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Add xsrf header
+    // This is only done if running in a standard browser environment.
+    // Specifically not if we're in a web worker, or react-native.
+    if (utils.isStandardBrowserEnv()) {
+      var cookies = require('./../helpers/cookies');
+
+      // Add xsrf header
+      var xsrfValue = (config.withCredentials || isURLSameOrigin(config.url)) && config.xsrfCookieName ?
+        cookies.read(config.xsrfCookieName) :
+        undefined;
+
+      if (xsrfValue) {
+        requestHeaders[config.xsrfHeaderName] = xsrfValue;
+      }
+    }
+
+    // Add headers to the request
+    if ('setRequestHeader' in request) {
+      utils.forEach(requestHeaders, function setRequestHeader(val, key) {
+        if (typeof requestData === 'undefined' && key.toLowerCase() === 'content-type') {
+          // Remove Content-Type if data is undefined
+          delete requestHeaders[key];
+        } else {
+          // Otherwise add header to the request
+          request.setRequestHeader(key, val);
+        }
+      });
+    }
+
+    // Add withCredentials to request if needed
+    if (config.withCredentials) {
+      request.withCredentials = true;
+    }
+
+    // Add responseType to request if needed
+    if (config.responseType) {
+      try {
+        request.responseType = config.responseType;
+      } catch (e) {
+        // Expected DOMException thrown by browsers not compatible XMLHttpRequest Level 2.
+        // But, this can be suppressed for 'json' type as it can be parsed by default 'transformResponse' function.
+        if (config.responseType !== 'json') {
+          throw e;
+        }
+      }
+    }
+
+    // Handle progress if needed
+    if (typeof config.onDownloadProgress === 'function') {
+      request.addEventListener('progress', config.onDownloadProgress);
+    }
+
+    // Not all browsers support upload events
+    if (typeof config.onUploadProgress === 'function' && request.upload) {
+      request.upload.addEventListener('progress', config.onUploadProgress);
+    }
+
+    if (config.cancelToken) {
+      // Handle cancellation
+      config.cancelToken.promise.then(function onCanceled(cancel) {
+        if (!request) {
+          return;
+        }
+
+        request.abort();
+        reject(cancel);
+        // Clean up request
+        request = null;
+      });
+    }
+
+    if (requestData === undefined) {
+      requestData = null;
+    }
+
+    // Send the request
+    request.send(requestData);
+  });
+};
+
+},{"./../utils":"node_modules/axios/lib/utils.js","./../core/settle":"node_modules/axios/lib/core/settle.js","./../helpers/buildURL":"node_modules/axios/lib/helpers/buildURL.js","./../helpers/parseHeaders":"node_modules/axios/lib/helpers/parseHeaders.js","./../helpers/isURLSameOrigin":"node_modules/axios/lib/helpers/isURLSameOrigin.js","../core/createError":"node_modules/axios/lib/core/createError.js","./../helpers/cookies":"node_modules/axios/lib/helpers/cookies.js"}],"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/node_modules/process/browser.js":[function(require,module,exports) {
+
+// shim for using process in browser
+var process = module.exports = {}; // cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+  throw new Error('setTimeout has not been defined');
+}
+
+function defaultClearTimeout() {
+  throw new Error('clearTimeout has not been defined');
+}
+
+(function () {
+  try {
+    if (typeof setTimeout === 'function') {
+      cachedSetTimeout = setTimeout;
+    } else {
+      cachedSetTimeout = defaultSetTimout;
+    }
+  } catch (e) {
+    cachedSetTimeout = defaultSetTimout;
+  }
+
+  try {
+    if (typeof clearTimeout === 'function') {
+      cachedClearTimeout = clearTimeout;
+    } else {
+      cachedClearTimeout = defaultClearTimeout;
+    }
+  } catch (e) {
+    cachedClearTimeout = defaultClearTimeout;
+  }
+})();
+
+function runTimeout(fun) {
+  if (cachedSetTimeout === setTimeout) {
+    //normal enviroments in sane situations
+    return setTimeout(fun, 0);
+  } // if setTimeout wasn't available but was latter defined
+
+
+  if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+    cachedSetTimeout = setTimeout;
+    return setTimeout(fun, 0);
+  }
+
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedSetTimeout(fun, 0);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+      return cachedSetTimeout.call(null, fun, 0);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+      return cachedSetTimeout.call(this, fun, 0);
+    }
+  }
+}
+
+function runClearTimeout(marker) {
+  if (cachedClearTimeout === clearTimeout) {
+    //normal enviroments in sane situations
+    return clearTimeout(marker);
+  } // if clearTimeout wasn't available but was latter defined
+
+
+  if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+    cachedClearTimeout = clearTimeout;
+    return clearTimeout(marker);
+  }
+
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedClearTimeout(marker);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+      return cachedClearTimeout.call(null, marker);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+      // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+      return cachedClearTimeout.call(this, marker);
+    }
+  }
+}
+
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+  if (!draining || !currentQueue) {
+    return;
+  }
+
+  draining = false;
+
+  if (currentQueue.length) {
+    queue = currentQueue.concat(queue);
+  } else {
+    queueIndex = -1;
+  }
+
+  if (queue.length) {
+    drainQueue();
+  }
+}
+
+function drainQueue() {
+  if (draining) {
+    return;
+  }
+
+  var timeout = runTimeout(cleanUpNextTick);
+  draining = true;
+  var len = queue.length;
+
+  while (len) {
+    currentQueue = queue;
+    queue = [];
+
+    while (++queueIndex < len) {
+      if (currentQueue) {
+        currentQueue[queueIndex].run();
+      }
+    }
+
+    queueIndex = -1;
+    len = queue.length;
+  }
+
+  currentQueue = null;
+  draining = false;
+  runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+  var args = new Array(arguments.length - 1);
+
+  if (arguments.length > 1) {
+    for (var i = 1; i < arguments.length; i++) {
+      args[i - 1] = arguments[i];
+    }
+  }
+
+  queue.push(new Item(fun, args));
+
+  if (queue.length === 1 && !draining) {
+    runTimeout(drainQueue);
+  }
+}; // v8 likes predictible objects
+
+
+function Item(fun, array) {
+  this.fun = fun;
+  this.array = array;
+}
+
+Item.prototype.run = function () {
+  this.fun.apply(null, this.array);
+};
+
+process.title = 'browser';
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) {
+  return [];
+};
+
+process.binding = function (name) {
+  throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () {
+  return '/';
+};
+
+process.chdir = function (dir) {
+  throw new Error('process.chdir is not supported');
+};
+
+process.umask = function () {
+  return 0;
+};
+},{}],"node_modules/axios/lib/defaults.js":[function(require,module,exports) {
+var process = require("process");
+'use strict';
+
+var utils = require('./utils');
+var normalizeHeaderName = require('./helpers/normalizeHeaderName');
+
+var DEFAULT_CONTENT_TYPE = {
+  'Content-Type': 'application/x-www-form-urlencoded'
+};
+
+function setContentTypeIfUnset(headers, value) {
+  if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
+    headers['Content-Type'] = value;
+  }
+}
+
+function getDefaultAdapter() {
+  var adapter;
+  // Only Node.JS has a process variable that is of [[Class]] process
+  if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
+    // For node use HTTP adapter
+    adapter = require('./adapters/http');
+  } else if (typeof XMLHttpRequest !== 'undefined') {
+    // For browsers use XHR adapter
+    adapter = require('./adapters/xhr');
+  }
+  return adapter;
+}
+
+var defaults = {
+  adapter: getDefaultAdapter(),
+
+  transformRequest: [function transformRequest(data, headers) {
+    normalizeHeaderName(headers, 'Accept');
+    normalizeHeaderName(headers, 'Content-Type');
+    if (utils.isFormData(data) ||
+      utils.isArrayBuffer(data) ||
+      utils.isBuffer(data) ||
+      utils.isStream(data) ||
+      utils.isFile(data) ||
+      utils.isBlob(data)
+    ) {
+      return data;
+    }
+    if (utils.isArrayBufferView(data)) {
+      return data.buffer;
+    }
+    if (utils.isURLSearchParams(data)) {
+      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
+      return data.toString();
+    }
+    if (utils.isObject(data)) {
+      setContentTypeIfUnset(headers, 'application/json;charset=utf-8');
+      return JSON.stringify(data);
+    }
+    return data;
+  }],
+
+  transformResponse: [function transformResponse(data) {
+    /*eslint no-param-reassign:0*/
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) { /* Ignore */ }
+    }
+    return data;
+  }],
+
+  /**
+   * A timeout in milliseconds to abort a request. If set to 0 (default) a
+   * timeout is not created.
+   */
+  timeout: 0,
+
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+
+  maxContentLength: -1,
+
+  validateStatus: function validateStatus(status) {
+    return status >= 200 && status < 300;
+  }
+};
+
+defaults.headers = {
+  common: {
+    'Accept': 'application/json, text/plain, */*'
+  }
+};
+
+utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
+  defaults.headers[method] = {};
+});
+
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
+});
+
+module.exports = defaults;
+
+},{"./utils":"node_modules/axios/lib/utils.js","./helpers/normalizeHeaderName":"node_modules/axios/lib/helpers/normalizeHeaderName.js","./adapters/http":"node_modules/axios/lib/adapters/xhr.js","./adapters/xhr":"node_modules/axios/lib/adapters/xhr.js","process":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/node_modules/process/browser.js"}],"node_modules/axios/lib/helpers/isAbsoluteURL.js":[function(require,module,exports) {
+'use strict';
+
+/**
+ * Determines whether the specified URL is absolute
+ *
+ * @param {string} url The URL to test
+ * @returns {boolean} True if the specified URL is absolute, otherwise false
+ */
+module.exports = function isAbsoluteURL(url) {
+  // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
+  // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
+  // by any combination of letters, digits, plus, period, or hyphen.
+  return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
+};
+
+},{}],"node_modules/axios/lib/helpers/combineURLs.js":[function(require,module,exports) {
+'use strict';
+
+/**
+ * Creates a new URL by combining the specified URLs
+ *
+ * @param {string} baseURL The base URL
+ * @param {string} relativeURL The relative URL
+ * @returns {string} The combined URL
+ */
+module.exports = function combineURLs(baseURL, relativeURL) {
+  return relativeURL
+    ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
+    : baseURL;
+};
+
+},{}],"node_modules/axios/lib/core/dispatchRequest.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+var transformData = require('./transformData');
+var isCancel = require('../cancel/isCancel');
+var defaults = require('../defaults');
+var isAbsoluteURL = require('./../helpers/isAbsoluteURL');
+var combineURLs = require('./../helpers/combineURLs');
+
+/**
+ * Throws a `Cancel` if cancellation has been requested.
+ */
+function throwIfCancellationRequested(config) {
+  if (config.cancelToken) {
+    config.cancelToken.throwIfRequested();
+  }
+}
+
+/**
+ * Dispatch a request to the server using the configured adapter.
+ *
+ * @param {object} config The config that is to be used for the request
+ * @returns {Promise} The Promise to be fulfilled
+ */
+module.exports = function dispatchRequest(config) {
+  throwIfCancellationRequested(config);
+
+  // Support baseURL config
+  if (config.baseURL && !isAbsoluteURL(config.url)) {
+    config.url = combineURLs(config.baseURL, config.url);
+  }
+
+  // Ensure headers exist
+  config.headers = config.headers || {};
+
+  // Transform request data
+  config.data = transformData(
+    config.data,
+    config.headers,
+    config.transformRequest
+  );
+
+  // Flatten headers
+  config.headers = utils.merge(
+    config.headers.common || {},
+    config.headers[config.method] || {},
+    config.headers || {}
+  );
+
+  utils.forEach(
+    ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
+    function cleanHeaderConfig(method) {
+      delete config.headers[method];
+    }
+  );
+
+  var adapter = config.adapter || defaults.adapter;
+
+  return adapter(config).then(function onAdapterResolution(response) {
+    throwIfCancellationRequested(config);
+
+    // Transform response data
+    response.data = transformData(
+      response.data,
+      response.headers,
+      config.transformResponse
+    );
+
+    return response;
+  }, function onAdapterRejection(reason) {
+    if (!isCancel(reason)) {
+      throwIfCancellationRequested(config);
+
+      // Transform response data
+      if (reason && reason.response) {
+        reason.response.data = transformData(
+          reason.response.data,
+          reason.response.headers,
+          config.transformResponse
+        );
+      }
+    }
+
+    return Promise.reject(reason);
+  });
+};
+
+},{"./../utils":"node_modules/axios/lib/utils.js","./transformData":"node_modules/axios/lib/core/transformData.js","../cancel/isCancel":"node_modules/axios/lib/cancel/isCancel.js","../defaults":"node_modules/axios/lib/defaults.js","./../helpers/isAbsoluteURL":"node_modules/axios/lib/helpers/isAbsoluteURL.js","./../helpers/combineURLs":"node_modules/axios/lib/helpers/combineURLs.js"}],"node_modules/axios/lib/core/mergeConfig.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('../utils');
+
+/**
+ * Config-specific merge-function which creates a new config-object
+ * by merging two configuration objects together.
+ *
+ * @param {Object} config1
+ * @param {Object} config2
+ * @returns {Object} New object resulting from merging config2 to config1
+ */
+module.exports = function mergeConfig(config1, config2) {
+  // eslint-disable-next-line no-param-reassign
+  config2 = config2 || {};
+  var config = {};
+
+  utils.forEach(['url', 'method', 'params', 'data'], function valueFromConfig2(prop) {
+    if (typeof config2[prop] !== 'undefined') {
+      config[prop] = config2[prop];
+    }
+  });
+
+  utils.forEach(['headers', 'auth', 'proxy'], function mergeDeepProperties(prop) {
+    if (utils.isObject(config2[prop])) {
+      config[prop] = utils.deepMerge(config1[prop], config2[prop]);
+    } else if (typeof config2[prop] !== 'undefined') {
+      config[prop] = config2[prop];
+    } else if (utils.isObject(config1[prop])) {
+      config[prop] = utils.deepMerge(config1[prop]);
+    } else if (typeof config1[prop] !== 'undefined') {
+      config[prop] = config1[prop];
+    }
+  });
+
+  utils.forEach([
+    'baseURL', 'transformRequest', 'transformResponse', 'paramsSerializer',
+    'timeout', 'withCredentials', 'adapter', 'responseType', 'xsrfCookieName',
+    'xsrfHeaderName', 'onUploadProgress', 'onDownloadProgress', 'maxContentLength',
+    'validateStatus', 'maxRedirects', 'httpAgent', 'httpsAgent', 'cancelToken',
+    'socketPath'
+  ], function defaultToConfig2(prop) {
+    if (typeof config2[prop] !== 'undefined') {
+      config[prop] = config2[prop];
+    } else if (typeof config1[prop] !== 'undefined') {
+      config[prop] = config1[prop];
+    }
+  });
+
+  return config;
+};
+
+},{"../utils":"node_modules/axios/lib/utils.js"}],"node_modules/axios/lib/core/Axios.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./../utils');
+var buildURL = require('../helpers/buildURL');
+var InterceptorManager = require('./InterceptorManager');
+var dispatchRequest = require('./dispatchRequest');
+var mergeConfig = require('./mergeConfig');
+
+/**
+ * Create a new instance of Axios
+ *
+ * @param {Object} instanceConfig The default config for the instance
+ */
+function Axios(instanceConfig) {
+  this.defaults = instanceConfig;
+  this.interceptors = {
+    request: new InterceptorManager(),
+    response: new InterceptorManager()
+  };
+}
+
+/**
+ * Dispatch a request
+ *
+ * @param {Object} config The config specific for this request (merged with this.defaults)
+ */
+Axios.prototype.request = function request(config) {
+  /*eslint no-param-reassign:0*/
+  // Allow for axios('example/url'[, config]) a la fetch API
+  if (typeof config === 'string') {
+    config = arguments[1] || {};
+    config.url = arguments[0];
+  } else {
+    config = config || {};
+  }
+
+  config = mergeConfig(this.defaults, config);
+  config.method = config.method ? config.method.toLowerCase() : 'get';
+
+  // Hook up interceptors middleware
+  var chain = [dispatchRequest, undefined];
+  var promise = Promise.resolve(config);
+
+  this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
+    chain.unshift(interceptor.fulfilled, interceptor.rejected);
+  });
+
+  this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
+    chain.push(interceptor.fulfilled, interceptor.rejected);
+  });
+
+  while (chain.length) {
+    promise = promise.then(chain.shift(), chain.shift());
+  }
+
+  return promise;
+};
+
+Axios.prototype.getUri = function getUri(config) {
+  config = mergeConfig(this.defaults, config);
+  return buildURL(config.url, config.params, config.paramsSerializer).replace(/^\?/, '');
+};
+
+// Provide aliases for supported request methods
+utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
+  /*eslint func-names:0*/
+  Axios.prototype[method] = function(url, config) {
+    return this.request(utils.merge(config || {}, {
+      method: method,
+      url: url
+    }));
+  };
+});
+
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  /*eslint func-names:0*/
+  Axios.prototype[method] = function(url, data, config) {
+    return this.request(utils.merge(config || {}, {
+      method: method,
+      url: url,
+      data: data
+    }));
+  };
+});
+
+module.exports = Axios;
+
+},{"./../utils":"node_modules/axios/lib/utils.js","../helpers/buildURL":"node_modules/axios/lib/helpers/buildURL.js","./InterceptorManager":"node_modules/axios/lib/core/InterceptorManager.js","./dispatchRequest":"node_modules/axios/lib/core/dispatchRequest.js","./mergeConfig":"node_modules/axios/lib/core/mergeConfig.js"}],"node_modules/axios/lib/cancel/Cancel.js":[function(require,module,exports) {
+'use strict';
+
+/**
+ * A `Cancel` is an object that is thrown when an operation is canceled.
+ *
+ * @class
+ * @param {string=} message The message.
+ */
+function Cancel(message) {
+  this.message = message;
+}
+
+Cancel.prototype.toString = function toString() {
+  return 'Cancel' + (this.message ? ': ' + this.message : '');
+};
+
+Cancel.prototype.__CANCEL__ = true;
+
+module.exports = Cancel;
+
+},{}],"node_modules/axios/lib/cancel/CancelToken.js":[function(require,module,exports) {
+'use strict';
+
+var Cancel = require('./Cancel');
+
+/**
+ * A `CancelToken` is an object that can be used to request cancellation of an operation.
+ *
+ * @class
+ * @param {Function} executor The executor function.
+ */
+function CancelToken(executor) {
+  if (typeof executor !== 'function') {
+    throw new TypeError('executor must be a function.');
+  }
+
+  var resolvePromise;
+  this.promise = new Promise(function promiseExecutor(resolve) {
+    resolvePromise = resolve;
+  });
+
+  var token = this;
+  executor(function cancel(message) {
+    if (token.reason) {
+      // Cancellation has already been requested
+      return;
+    }
+
+    token.reason = new Cancel(message);
+    resolvePromise(token.reason);
+  });
+}
+
+/**
+ * Throws a `Cancel` if cancellation has been requested.
+ */
+CancelToken.prototype.throwIfRequested = function throwIfRequested() {
+  if (this.reason) {
+    throw this.reason;
+  }
+};
+
+/**
+ * Returns an object that contains a new `CancelToken` and a function that, when called,
+ * cancels the `CancelToken`.
+ */
+CancelToken.source = function source() {
+  var cancel;
+  var token = new CancelToken(function executor(c) {
+    cancel = c;
+  });
+  return {
+    token: token,
+    cancel: cancel
+  };
+};
+
+module.exports = CancelToken;
+
+},{"./Cancel":"node_modules/axios/lib/cancel/Cancel.js"}],"node_modules/axios/lib/helpers/spread.js":[function(require,module,exports) {
+'use strict';
+
+/**
+ * Syntactic sugar for invoking a function and expanding an array for arguments.
+ *
+ * Common use case would be to use `Function.prototype.apply`.
+ *
+ *  ```js
+ *  function f(x, y, z) {}
+ *  var args = [1, 2, 3];
+ *  f.apply(null, args);
+ *  ```
+ *
+ * With `spread` this example can be re-written.
+ *
+ *  ```js
+ *  spread(function(x, y, z) {})([1, 2, 3]);
+ *  ```
+ *
+ * @param {Function} callback
+ * @returns {Function}
+ */
+module.exports = function spread(callback) {
+  return function wrap(arr) {
+    return callback.apply(null, arr);
+  };
+};
+
+},{}],"node_modules/axios/lib/axios.js":[function(require,module,exports) {
+'use strict';
+
+var utils = require('./utils');
+var bind = require('./helpers/bind');
+var Axios = require('./core/Axios');
+var mergeConfig = require('./core/mergeConfig');
+var defaults = require('./defaults');
+
+/**
+ * Create an instance of Axios
+ *
+ * @param {Object} defaultConfig The default config for the instance
+ * @return {Axios} A new instance of Axios
+ */
+function createInstance(defaultConfig) {
+  var context = new Axios(defaultConfig);
+  var instance = bind(Axios.prototype.request, context);
+
+  // Copy axios.prototype to instance
+  utils.extend(instance, Axios.prototype, context);
+
+  // Copy context to instance
+  utils.extend(instance, context);
+
+  return instance;
+}
+
+// Create the default instance to be exported
+var axios = createInstance(defaults);
+
+// Expose Axios class to allow class inheritance
+axios.Axios = Axios;
+
+// Factory for creating new instances
+axios.create = function create(instanceConfig) {
+  return createInstance(mergeConfig(axios.defaults, instanceConfig));
+};
+
+// Expose Cancel & CancelToken
+axios.Cancel = require('./cancel/Cancel');
+axios.CancelToken = require('./cancel/CancelToken');
+axios.isCancel = require('./cancel/isCancel');
+
+// Expose all/spread
+axios.all = function all(promises) {
+  return Promise.all(promises);
+};
+axios.spread = require('./helpers/spread');
+
+module.exports = axios;
+
+// Allow use of default import syntax in TypeScript
+module.exports.default = axios;
+
+},{"./utils":"node_modules/axios/lib/utils.js","./helpers/bind":"node_modules/axios/lib/helpers/bind.js","./core/Axios":"node_modules/axios/lib/core/Axios.js","./core/mergeConfig":"node_modules/axios/lib/core/mergeConfig.js","./defaults":"node_modules/axios/lib/defaults.js","./cancel/Cancel":"node_modules/axios/lib/cancel/Cancel.js","./cancel/CancelToken":"node_modules/axios/lib/cancel/CancelToken.js","./cancel/isCancel":"node_modules/axios/lib/cancel/isCancel.js","./helpers/spread":"node_modules/axios/lib/helpers/spread.js"}],"node_modules/axios/index.js":[function(require,module,exports) {
+module.exports = require('./lib/axios');
+},{"./lib/axios":"node_modules/axios/lib/axios.js"}],"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
 function getBundleURLCached() {
@@ -8574,7 +10287,7 @@ function getBaseURL(url) {
 
 exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
-},{}],"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js":[function(require,module,exports) {
+},{}],"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/css-loader.js":[function(require,module,exports) {
 var bundle = require('./bundle-url');
 
 function updateLink(link) {
@@ -8609,7 +10322,7 @@ function reloadCSS() {
 }
 
 module.exports = reloadCSS;
-},{"./bundle-url":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/bundle-url.js"}],"node_modules/vue-hot-reload-api/dist/index.js":[function(require,module,exports) {
+},{"./bundle-url":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/bundle-url.js"}],"node_modules/vue-hot-reload-api/dist/index.js":[function(require,module,exports) {
 var Vue // late bind
 var version
 var map = Object.create(null)
@@ -8935,20 +10648,20 @@ var _default = {
   }
 };
 exports.default = _default;
-        var $09d195 = exports.default || module.exports;
+        var $2dd3aa = exports.default || module.exports;
       
-      if (typeof $09d195 === 'function') {
-        $09d195 = $09d195.options;
+      if (typeof $2dd3aa === 'function') {
+        $2dd3aa = $2dd3aa.options;
       }
     
         /* template */
-        Object.assign($09d195, (function () {
+        Object.assign($2dd3aa, (function () {
           var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
   return _c("div", [
-    _c("nav", { staticClass: "navbar navbar-expand-lg navbar-light bg-dark" }, [
+    _c("nav", { staticClass: "navbar navbar-expand-lg" }, [
       _c("img", {
         staticStyle: { cursor: "pointer", width: "50px" },
         attrs: { src: _vm.logoHome, alt: "" }
@@ -8990,7 +10703,7 @@ exports.default = _default;
             _c(
               "button",
               {
-                staticClass: "btn btn-outline-success my-2 my-sm-0",
+                staticClass: "btn my-2 my-sm-0",
                 attrs: { type: "submit" },
                 on: {
                   click: function($event) {
@@ -9045,7 +10758,7 @@ render._withStripped = true
             render: render,
             staticRenderFns: staticRenderFns,
             _compiled: true,
-            _scopeId: null,
+            _scopeId: "data-v-2dd3aa",
             functional: undefined
           };
         })());
@@ -9058,9 +10771,9 @@ render._withStripped = true
         if (api.compatible) {
           module.hot.accept();
           if (!module.hot.data) {
-            api.createRecord('$09d195', $09d195);
+            api.createRecord('$2dd3aa', $2dd3aa);
           } else {
-            api.reload('$09d195', $09d195);
+            api.reload('$2dd3aa', $2dd3aa);
           }
         }
 
@@ -9071,7 +10784,7 @@ render._withStripped = true
       
       }
     })();
-},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"assets/logo.png":[function(require,module,exports) {
+},{"_css_loader":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"assets/logo.png":[function(require,module,exports) {
 module.exports = "/logo.e9a9c890.png";
 },{}],"src/components/formImage.vue":[function(require,module,exports) {
 "use strict";
@@ -9080,6 +10793,59 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _axios = _interopRequireDefault(require("axios"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -9151,41 +10917,55 @@ exports.default = void 0;
 //
 var _default = {
   data: function data() {
-    fileToUpload: null;
-
-    isSuccess: false;
+    return {
+      fileToUpload: null,
+      isSuccess: false,
+      imageAddress: 'https://media1.giphy.com/media/jwY3FBoIyb4Kx80FMS/giphy.gif'
+    };
   },
   methods: {
-    sendFile: function sendFile() {
-      var _this = this;
-
-      console.log('sendFile invoked');
-      var bodyFromData = new FormData();
-      bodyFromData.set('image', this.fileToUpload);
-      axios({
-        method: "POST",
-        url: ""
-      }).then(function (response) {
-        _this.isSuccess = true;
+    upload: function upload() {
+      console.log("ini file", this.fileToUpload);
+      var data = new FormData();
+      data.append("image", this.fileToUpload);
+      (0, _axios.default)({
+        method: 'post',
+        url: 'http://localhost:3000/files/upload-single',
+        headers: {
+          token: localStorage.getItem("token")
+        },
+        data: data
+      }).then(function (result) {
+        Swal.fire({
+          position: 'center',
+          icon: 'success',
+          title: 'Successfully Upload Picture',
+          showConfirmButton: false,
+          timer: 1500
+        });
+        console.log(result);
       }).catch(function (err) {
-        console.log(err.response);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error while uploading pictures',
+          text: 'Please upload again!'
+        });
       });
     },
-    postFile: function postFile(event) {
-      console.log('postFile invoked');
-      this.fileToUpload = event.target.files[0];
+    changeFile: function changeFile() {
+      this.fileToUpload = this.$refs.myFiles.files[0];
     }
   }
 };
 exports.default = _default;
-        var $267dea = exports.default || module.exports;
+        var $601554 = exports.default || module.exports;
       
-      if (typeof $267dea === 'function') {
-        $267dea = $267dea.options;
+      if (typeof $601554 === 'function') {
+        $601554 = $601554.options;
       }
     
         /* template */
-        Object.assign($267dea, (function () {
+        Object.assign($601554, (function () {
           var render = function() {
   var _vm = this
   var _h = _vm.$createElement
@@ -9193,57 +10973,253 @@ exports.default = _default;
   return _c("div", [
     _c("div", { staticClass: "col-sm-10 offset-sm-1 pt-5" }, [
       _c("div", { staticClass: "row" }, [
-        _vm._m(0),
+        _c("div", { staticClass: "col-sm-6" }, [
+          _c("div", { staticClass: "card" }, [
+            _c("img", {
+              staticClass: "card-img-top",
+              attrs: { src: _vm.imageAddress, alt: "..." }
+            })
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "card-body" })
+        ]),
         _vm._v(" "),
         _c("div", { staticClass: "col-sm-6" }, [
           _c("div", { staticClass: "card" }, [
-            _vm._m(1),
+            _c("div", { staticClass: "card-body" }, [
+              _c("h1", { staticClass: "card-title" }, [
+                _vm._v("Try Out Our Web For Free")
+              ]),
+              _vm._v(" "),
+              _c("h4", { staticClass: "py-3" }, [
+                _vm._v("You Can Try Our Web With The Sample Image")
+              ]),
+              _vm._v(" "),
+              _c(
+                "div",
+                {
+                  staticClass: "carousel slide w-100",
+                  attrs: { id: "recipeCarousel", "data-ride": "carousel" }
+                },
+                [
+                  _c(
+                    "div",
+                    {
+                      staticClass: "carousel-inner w-100",
+                      attrs: { role: "listbox" }
+                    },
+                    [
+                      _c(
+                        "div",
+                        { staticClass: "carousel-item row no-gutters active" },
+                        [
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample1.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample1.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ]),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample2.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample2.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ]),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample3.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample3.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ]),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample4.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample4.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ])
+                        ]
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "div",
+                        { staticClass: "carousel-item row no-gutters " },
+                        [
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample5.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample5.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ]),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample3.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample3.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ]),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample4.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample4.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ]),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "col-3 float-left px-1" }, [
+                            _c("a", { attrs: { href: "" } }, [
+                              _c("img", {
+                                staticClass: "img-fluid",
+                                attrs: {
+                                  src:
+                                    "https://labs.everypixel.com/api/static/i/estest_sample5.jpg"
+                                },
+                                on: {
+                                  click: function($event) {
+                                    $event.preventDefault()
+                                    return _vm.sendFile(
+                                      "https://labs.everypixel.com/api/static/i/estest_sample5.jpg"
+                                    )
+                                  }
+                                }
+                              })
+                            ])
+                          ])
+                        ]
+                      )
+                    ]
+                  ),
+                  _vm._v(" "),
+                  _vm._m(0),
+                  _vm._v(" "),
+                  _vm._m(1)
+                ]
+              )
+            ]),
             _vm._v(" "),
             _c("div", { staticClass: "card-footer" }, [
-              _c("label", [_vm._v("Choose one image file to upload")]),
-              _vm._v(" "),
-              _c("div", { staticClass: "form-group" }, [
-                _c("div", { staticClass: "custom-file" }, [
-                  _c("input", {
-                    staticClass: "custom-file-input",
-                    attrs: { type: "file", id: "customFile" },
-                    on: {
-                      change: function($event) {
-                        return _vm.postFile($event)
-                      }
+              _c(
+                "form",
+                {
+                  on: {
+                    submit: function($event) {
+                      $event.preventDefault()
+                      return _vm.upload($event)
                     }
+                  }
+                },
+                [
+                  _c("input", {
+                    ref: "myFiles",
+                    attrs: { type: "file", name: "file" },
+                    on: { change: _vm.changeFile }
                   }),
                   _vm._v(" "),
-                  _c(
-                    "label",
-                    {
-                      staticClass: "custom-file-label",
-                      attrs: { for: "customFile" }
-                    },
-                    [_vm._v("Choose file")]
-                  )
-                ]),
-                _vm._v(" "),
-                _c(
-                  "a",
-                  {
-                    staticClass: "btn btn-primary mt-2",
-                    attrs: { href: "" },
-                    on: {
-                      submit: function($event) {
-                        $event.preventDefault()
-                        return _vm.sendFile($event)
-                      }
-                    }
-                  },
-                  [_vm._v("Upload Image")]
-                )
-              ])
+                  _c("input", { attrs: { type: "submit", val: "test" } })
+                ]
+              )
             ])
           ])
         ])
       ])
-    ])
+    ]),
+    _vm._v(" "),
+    _vm._m(2),
+    _vm._v(" "),
+    _vm._m(3)
   ])
 }
 var staticRenderFns = [
@@ -9251,189 +11227,188 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "col-sm-6" }, [
-      _c("div", { staticClass: "card" }, [
-        _c("img", {
-          staticClass: "card-img-top",
-          attrs: {
-            src: "https://media1.giphy.com/media/jwY3FBoIyb4Kx80FMS/giphy.gif",
-            alt: "..."
-          }
-        })
-      ]),
-      _vm._v(" "),
-      _c("div", { staticClass: "card-body" })
-    ])
+    return _c(
+      "a",
+      {
+        staticClass: "carousel-control-prev",
+        attrs: { href: "#recipeCarousel", role: "button", "data-slide": "prev" }
+      },
+      [
+        _c("span", {
+          staticClass: "carousel-control-prev-icon",
+          attrs: { "aria-hidden": "true" }
+        }),
+        _vm._v(" "),
+        _c("span", { staticClass: "sr-only" }, [_vm._v("Previous")])
+      ]
+    )
   },
   function() {
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "card-body" }, [
-      _c("h1", { staticClass: "card-title" }, [
-        _vm._v("Try Out Our Web For Free")
-      ]),
-      _vm._v(" "),
-      _c("h4", { staticClass: "py-3" }, [
-        _vm._v("You Can Try Our Web With The Sample Image")
-      ]),
-      _vm._v(" "),
-      _c(
-        "div",
-        {
-          staticClass: "carousel slide w-100",
-          attrs: { id: "recipeCarousel", "data-ride": "carousel" }
-        },
-        [
-          _c(
-            "div",
-            { staticClass: "carousel-inner w-100", attrs: { role: "listbox" } },
-            [
-              _c(
-                "div",
-                { staticClass: "carousel-item row no-gutters active" },
-                [
-                  _c("div", { staticClass: "col-3 float-left px-1" }, [
-                    _c("a", { attrs: { href: "" } }, [
-                      _c("img", {
-                        staticClass: "img-fluid",
-                        attrs: {
-                          src:
-                            "https://labs.everypixel.com/api/static/i/estest_sample1.jpg"
-                        }
-                      })
-                    ])
-                  ]),
-                  _vm._v(" "),
-                  _c("div", { staticClass: "col-3 float-left px-1" }, [
-                    _c("a", { attrs: { href: "" } }, [
-                      _c("img", {
-                        staticClass: "img-fluid",
-                        attrs: {
-                          src:
-                            "https://labs.everypixel.com/api/static/i/estest_sample2.jpg"
-                        }
-                      })
-                    ])
-                  ]),
-                  _vm._v(" "),
-                  _c("div", { staticClass: "col-3 float-left px-1" }, [
-                    _c("a", { attrs: { href: "" } }, [
-                      _c("img", {
-                        staticClass: "img-fluid",
-                        attrs: {
-                          src:
-                            "https://labs.everypixel.com/api/static/i/estest_sample3.jpg"
-                        }
-                      })
-                    ])
-                  ]),
-                  _vm._v(" "),
-                  _c("div", { staticClass: "col-3 float-left px-1" }, [
-                    _c("a", { attrs: { href: "" } }, [
-                      _c("img", {
-                        staticClass: "img-fluid",
-                        attrs: {
-                          src:
-                            "https://labs.everypixel.com/api/static/i/estest_sample4.jpg"
-                        }
-                      })
-                    ])
-                  ])
-                ]
-              ),
+    return _c(
+      "a",
+      {
+        staticClass: "carousel-control-next",
+        attrs: { href: "#recipeCarousel", role: "button", "data-slide": "next" }
+      },
+      [
+        _c("span", {
+          staticClass: "carousel-control-next-icon",
+          attrs: { "aria-hidden": "true" }
+        }),
+        _vm._v(" "),
+        _c("span", { staticClass: "sr-only" }, [_vm._v("Next")])
+      ]
+    )
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c(
+      "div",
+      {
+        staticClass: "modal fade left",
+        attrs: {
+          id: "ModalWarning",
+          tabindex: "-1",
+          role: "dialog",
+          "aria-labelledby": "myModalLabel",
+          "aria-hidden": "true"
+        }
+      },
+      [
+        _c(
+          "div",
+          {
+            staticClass:
+              "modal-dialog modal-notify modal-warning modal-side modal-bottom-left",
+            attrs: { role: "document" }
+          },
+          [
+            _c("div", { staticClass: "modal-content" }, [
+              _c("div", { staticClass: "modal-header" }, [
+                _c("p", { staticClass: "heading" }, [_vm._v("Modal Warning")]),
+                _vm._v(" "),
+                _c(
+                  "button",
+                  {
+                    staticClass: "close",
+                    attrs: {
+                      type: "button",
+                      "data-dismiss": "modal",
+                      "aria-label": "Close"
+                    }
+                  },
+                  [
+                    _c(
+                      "span",
+                      {
+                        staticClass: "white-text",
+                        attrs: { "aria-hidden": "true" }
+                      },
+                      [_vm._v("×")]
+                    )
+                  ]
+                )
+              ]),
               _vm._v(" "),
-              _c("div", { staticClass: "carousel-item row no-gutters " }, [
-                _c("div", { staticClass: "col-3 float-left px-1" }, [
-                  _c("a", { attrs: { href: "" } }, [
+              _c("div", { staticClass: "modal-body" }, [
+                _c("div", { staticClass: "row" }, [
+                  _c("div", { staticClass: "col-3 text-center" }, [
                     _c("img", {
-                      staticClass: "img-fluid",
+                      staticClass: "img-fluid z-depth-1-half rounded-circle",
                       attrs: {
                         src:
-                          "https://labs.everypixel.com/api/static/i/estest_sample5.jpg"
+                          "https://mdbootstrap.com/img/Photos/Avatars/img%20(1).jpg",
+                        alt: "IMG of Avatars"
                       }
-                    })
-                  ])
-                ]),
-                _vm._v(" "),
-                _c("div", { staticClass: "col-3 float-left px-1" }, [
-                  _c("a", { attrs: { href: "" } }, [
-                    _c("img", {
-                      staticClass: "img-fluid",
-                      attrs: {
-                        src:
-                          "https://labs.everypixel.com/api/static/i/estest_sample3.jpg"
-                      }
-                    })
-                  ])
-                ]),
-                _vm._v(" "),
-                _c("div", { staticClass: "col-3 float-left px-1" }, [
-                  _c("a", { attrs: { href: "" } }, [
-                    _c("img", {
-                      staticClass: "img-fluid",
-                      attrs: {
-                        src:
-                          "https://labs.everypixel.com/api/static/i/estest_sample4.jpg"
-                      }
-                    })
-                  ])
-                ]),
-                _vm._v(" "),
-                _c("div", { staticClass: "col-3 float-left px-1" }, [
-                  _c("a", { attrs: { href: "" } }, [
-                    _c("img", {
-                      staticClass: "img-fluid",
-                      attrs: {
-                        src:
-                          "https://labs.everypixel.com/api/static/i/estest_sample5.jpg"
-                      }
-                    })
+                    }),
+                    _vm._v(" "),
+                    _c("div", { staticStyle: { height: "10px" } }),
+                    _vm._v(" "),
+                    _c("p", { staticClass: "title mb-0" }, [_vm._v("Jane")]),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      {
+                        staticClass: "text-muted ",
+                        staticStyle: { "font-size": "13px" }
+                      },
+                      [_vm._v("Consultant")]
+                    )
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "col-9" }, [
+                    _c("p", [
+                      _vm._v(
+                        "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Fuga, molestiae provident temporibus\n                        sunt earum."
+                      )
+                    ]),
+                    _vm._v(" "),
+                    _c("p", { staticClass: "card-text" }, [
+                      _c("strong", [
+                        _vm._v(
+                          "Lorem ipsum dolor sit amet, consectetur adipisicing elit."
+                        )
+                      ])
+                    ])
                   ])
                 ])
-              ])
-            ]
-          ),
-          _vm._v(" "),
-          _c(
-            "a",
-            {
-              staticClass: "carousel-control-prev",
-              attrs: {
-                href: "#recipeCarousel",
-                role: "button",
-                "data-slide": "prev"
-              }
-            },
-            [
-              _c("span", {
-                staticClass: "carousel-control-prev-icon",
-                attrs: { "aria-hidden": "true" }
-              }),
+              ]),
               _vm._v(" "),
-              _c("span", { staticClass: "sr-only" }, [_vm._v("Previous")])
-            ]
-          ),
-          _vm._v(" "),
-          _c(
-            "a",
-            {
-              staticClass: "carousel-control-next",
-              attrs: {
-                href: "#recipeCarousel",
-                role: "button",
-                "data-slide": "next"
-              }
-            },
-            [
-              _c("span", {
-                staticClass: "carousel-control-next-icon",
-                attrs: { "aria-hidden": "true" }
-              }),
-              _vm._v(" "),
-              _c("span", { staticClass: "sr-only" }, [_vm._v("Next")])
-            ]
-          )
+              _c(
+                "div",
+                { staticClass: "modal-footer justify-content-center" },
+                [
+                  _c(
+                    "a",
+                    {
+                      staticClass: "btn btn-warning",
+                      attrs: { type: "button" }
+                    },
+                    [
+                      _vm._v("Get it now "),
+                      _c("i", { staticClass: "far fa-gem ml-1 white-text" })
+                    ]
+                  ),
+                  _vm._v(" "),
+                  _c(
+                    "a",
+                    {
+                      staticClass: "btn btn-outline-warning waves-effect",
+                      attrs: { type: "button", "data-dismiss": "modal" }
+                    },
+                    [_vm._v("No, thanks")]
+                  )
+                ]
+              )
+            ])
+          ]
+        )
+      ]
+    )
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("div", { staticClass: "text-center" }, [
+      _c(
+        "a",
+        {
+          staticClass: "btn btn-default btn-rounded",
+          attrs: {
+            href: "",
+            "data-toggle": "modal",
+            "data-target": "#ModalWarning"
+          }
+        },
+        [
+          _vm._v("Launch Modal\n    Warning "),
+          _c("i", { staticClass: "far fa-eye ml-1 text-white" })
         ]
       )
     ])
@@ -9458,9 +11433,9 @@ render._withStripped = true
         if (api.compatible) {
           module.hot.accept();
           if (!module.hot.data) {
-            api.createRecord('$267dea', $267dea);
+            api.createRecord('$601554', $601554);
           } else {
-            api.reload('$267dea', $267dea);
+            api.reload('$601554', $601554);
           }
         }
 
@@ -9471,7 +11446,7 @@ render._withStripped = true
       
       }
     })();
-},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/pic.vue":[function(require,module,exports) {
+},{"axios":"node_modules/axios/index.js","_css_loader":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/profilePic.vue":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9488,14 +11463,14 @@ var _default = {
   props: ['pic']
 };
 exports.default = _default;
-        var $b18fba = exports.default || module.exports;
+        var $644d3c = exports.default || module.exports;
       
-      if (typeof $b18fba === 'function') {
-        $b18fba = $b18fba.options;
+      if (typeof $644d3c === 'function') {
+        $644d3c = $644d3c.options;
       }
     
         /* template */
-        Object.assign($b18fba, (function () {
+        Object.assign($644d3c, (function () {
           var render = function() {
   var _vm = this
   var _h = _vm.$createElement
@@ -9522,9 +11497,9 @@ render._withStripped = true
         if (api.compatible) {
           module.hot.accept();
           if (!module.hot.data) {
-            api.createRecord('$b18fba', $b18fba);
+            api.createRecord('$644d3c', $644d3c);
           } else {
-            api.reload('$b18fba', $b18fba);
+            api.reload('$644d3c', $644d3c);
           }
         }
 
@@ -9535,13 +11510,20 @@ render._withStripped = true
       
       }
     })();
-},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/formRegister.vue":[function(require,module,exports) {
+},{"_css_loader":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/profile.vue":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _axios = _interopRequireDefault(require("axios"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+//
+//
 //
 //
 //
@@ -9580,148 +11562,230 @@ exports.default = void 0;
 //
 var _default = {
   data: function data() {
-    email: '';
-
-    username: '';
-
-    password: '';
+    return {
+      age: "",
+      keywords: "",
+      quality: ""
+    };
   },
+  props: ['pictures', 'user'],
   methods: {
-    sendRegister: function sendRegister() {
-      axios.post({
-        url: 'http://localhost/3000/register',
-        data: {
-          email: this.email,
-          password: this.password,
-          username: this.user
+    getAge: function getAge(id) {
+      var _this = this;
+
+      (0, _axios.default)({
+        method: 'get',
+        url: "http://localhost:3000/files/".concat(id, "/image-age"),
+        headers: {
+          token: localStorage.getItem("token")
         }
+      }).then(function (response) {
+        _this.age = response.data.faces[0].age.toFixed();
+      }).catch(function (err) {
+        console.log(err);
       });
-      then(function (_ref) {
-        var data = _ref.data;
+    },
+    getKeywords: function getKeywords(id) {
+      var _this2 = this;
+
+      (0, _axios.default)({
+        method: 'get',
+        url: "http://localhost:3000/files/".concat(id, "/image-keywords"),
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        var arr = [];
+        var keywords = response.data.keywords;
+
+        for (var i = 0; i < 5; i++) {
+          arr.push(keywords[i].keyword);
+        }
+
+        _this2.keywords = arr;
+      }).catch(function (err) {
+        console.log(err);
+      });
+    },
+    getQuality: function getQuality(id) {
+      var _this3 = this;
+
+      (0, _axios.default)({
+        method: 'get',
+        url: "http://localhost:3000/files/".concat(id, "/image-quality"),
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        _this3.quality = response.data.quality.score;
+      }).catch(function (err) {
+        console.log(err);
+      });
+    },
+    deletePic: function deletePic(id) {
+      (0, _axios.default)({
+        method: 'delete',
+        url: "http://localhost:3000/files/".concat(id, "/delete"),
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        Swal.fire({
+          position: 'center',
+          icon: 'success',
+          title: 'Successfully Delete Picture',
+          showConfirmButton: false,
+          timer: 1500
+        });
+      }).catch(function (err) {
+        console.log(err);
       });
     }
   }
 };
 exports.default = _default;
-        var $335753 = exports.default || module.exports;
+        var $d015cd = exports.default || module.exports;
       
-      if (typeof $335753 === 'function') {
-        $335753 = $335753.options;
+      if (typeof $d015cd === 'function') {
+        $d015cd = $d015cd.options;
       }
     
         /* template */
-        Object.assign($335753, (function () {
+        Object.assign($d015cd, (function () {
           var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c("div", [
-    _c("section", { staticClass: "fdb-block py-0" }, [
-      _c("div", { staticClass: "container py-5 my-5" }, [
-        _c("div", { staticClass: " row justify-content-end" }, [
+  return _c("div", { staticClass: "row" }, [
+    _c(
+      "div",
+      { staticClass: "col-md-offset-2 col-md-8 col-lg-offset-3 col-lg-6" },
+      [
+        _c("div", { staticClass: "well profile" }, [
+          _c("div", { staticClass: "col-sm-12" }, [
+            _c("div", { staticClass: "col-xs-12 col-sm-8" }, [
+              _c("h2", [_vm._v(_vm._s(_vm.user))])
+            ])
+          ]),
+          _vm._v(" "),
           _c(
             "div",
-            { staticClass: "col-12 col-md-8 col-lg-6 col-xl-5 text-left" },
-            [
-              _c("div", { staticClass: "fdb-box" }, [
-                _vm._m(0),
-                _vm._v(" "),
-                _c("div", { staticClass: "row" }, [
-                  _c("div", { staticClass: "col mt-4" }, [
-                    _c("input", {
-                      directives: [
-                        {
-                          name: "model",
-                          rawName: "v-model",
-                          value: _vm.username,
-                          expression: "username"
-                        }
-                      ],
-                      staticClass: "form-control",
-                      attrs: { type: "text", placeholder: "Username" },
-                      domProps: { value: _vm.username },
-                      on: {
-                        input: function($event) {
-                          if ($event.target.composing) {
-                            return
-                          }
-                          _vm.username = $event.target.value
-                        }
-                      }
+            { staticClass: "col-xs-12 divider text-center" },
+            _vm._l(_vm.pictures, function(pic) {
+              return _c(
+                "div",
+                { staticClass: "col-xs-12 col-sm-4 text-center" },
+                [
+                  _c("figure", [
+                    _c("img", {
+                      staticClass: "img-circle img-responsive",
+                      attrs: { src: pic.url, alt: "" }
                     })
-                  ])
-                ]),
-                _vm._v(" "),
-                _c("div", { staticClass: "row mt-4" }, [
-                  _c("div", { staticClass: "col" }, [
-                    _c("input", {
-                      directives: [
-                        {
-                          name: "model",
-                          rawName: "v-model",
-                          value: _vm.password,
-                          expression: "password"
-                        }
-                      ],
-                      staticClass: "form-control",
-                      attrs: { type: "password", placeholder: "Password" },
-                      domProps: { value: _vm.password },
-                      on: {
-                        input: function($event) {
-                          if ($event.target.composing) {
-                            return
-                          }
-                          _vm.password = $event.target.value
-                        }
-                      }
-                    })
-                  ])
-                ]),
-                _vm._v(" "),
-                _c("div", { staticClass: "row mt-4" }, [
-                  _c("div", { staticClass: "col" }, [
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "col-xs-12 col-sm-4 emphasis" }, [
                     _c(
                       "button",
                       {
-                        staticClass: "btn btn-secondary",
-                        attrs: { type: "button" },
+                        staticClass: "btn btn-success btn-block",
                         on: {
                           click: function($event) {
-                            $event.preventDefault()
-                            return _vm.sendRegister()
+                            return _vm.getAge(pic._id)
                           }
                         }
                       },
-                      [_vm._v("Submit")]
+                      [
+                        _c("span", { staticClass: "fa fa-plus-circle" }),
+                        _vm._v("Get Age")
+                      ]
+                    ),
+                    _vm._v(" "),
+                    _c("h2", [_c("strong", [_vm._v(_vm._s(_vm.age))])])
+                  ]),
+                  _vm._v(" "),
+                  _c(
+                    "div",
+                    { staticClass: "col-xs-12 col-sm-4 emphasis" },
+                    [
+                      _c(
+                        "button",
+                        {
+                          staticClass: "btn btn-info btn-block",
+                          on: {
+                            click: function($event) {
+                              return _vm.getKeywords(pic._id)
+                            }
+                          }
+                        },
+                        [
+                          _c("span", { staticClass: "fa fa-user" }),
+                          _vm._v("Get Keywords")
+                        ]
+                      ),
+                      _vm._v(" "),
+                      _vm._l(_vm.keywords, function(keyword) {
+                        return _c("div", [
+                          _c("h2", [_c("strong", [_vm._v(_vm._s(keyword))])])
+                        ])
+                      })
+                    ],
+                    2
+                  ),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "col-xs-12 col-sm-4 emphasis" }, [
+                    _c(
+                      "button",
+                      {
+                        staticClass: "btn btn-info btn-block",
+                        on: {
+                          click: function($event) {
+                            return _vm.getQuality(pic._id)
+                          }
+                        }
+                      },
+                      [
+                        _c("span", { staticClass: "fa fa-user" }),
+                        _vm._v("Get quality")
+                      ]
+                    ),
+                    _vm._v(" "),
+                    _c("h2", [
+                      _c("strong", [
+                        _vm._v(
+                          _vm._s((Number(_vm.quality) * 100).toFixed()) + "%"
+                        )
+                      ])
+                    ])
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "col-xs-12 col-sm-4 emphasis" }, [
+                    _c(
+                      "button",
+                      {
+                        staticClass: "btn btn-info btn-block",
+                        on: {
+                          click: function($event) {
+                            return _vm.deletePic(pic._id)
+                          }
+                        }
+                      },
+                      [
+                        _c("span", { staticClass: "fa fa-user" }),
+                        _vm._v("Delete")
+                      ]
                     )
                   ])
-                ])
-              ])
-            ]
+                ]
+              )
+            }),
+            0
           )
         ])
-      ])
-    ])
+      ]
+    )
   ])
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "row" }, [
-      _c("div", { staticClass: "col" }, [
-        _c("h1", [_vm._v("Register Page")]),
-        _vm._v(" "),
-        _c("p", { staticClass: "lead" }, [
-          _vm._v(
-            "Right at the coast of the Semantics, a large language ocean. A small river named Duden."
-          )
-        ])
-      ])
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 
           return {
@@ -9741,9 +11805,9 @@ render._withStripped = true
         if (api.compatible) {
           module.hot.accept();
           if (!module.hot.data) {
-            api.createRecord('$335753', $335753);
+            api.createRecord('$d015cd', $d015cd);
           } else {
-            api.reload('$335753', $335753);
+            api.reload('$d015cd', $d015cd);
           }
         }
 
@@ -9754,7 +11818,7 @@ render._withStripped = true
       
       }
     })();
-},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/footerItem.vue":[function(require,module,exports) {
+},{"axios":"node_modules/axios/index.js","_css_loader":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/footerItem.vue":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9778,14 +11842,14 @@ exports.default = void 0;
 //
 var _default = {};
 exports.default = _default;
-        var $874478 = exports.default || module.exports;
+        var $3fe288 = exports.default || module.exports;
       
-      if (typeof $874478 === 'function') {
-        $874478 = $874478.options;
+      if (typeof $3fe288 === 'function') {
+        $3fe288 = $3fe288.options;
       }
     
         /* template */
-        Object.assign($874478, (function () {
+        Object.assign($3fe288, (function () {
           var render = function() {
   var _vm = this
   var _h = _vm.$createElement
@@ -9838,9 +11902,9 @@ render._withStripped = true
         if (api.compatible) {
           module.hot.accept();
           if (!module.hot.data) {
-            api.createRecord('$874478', $874478);
+            api.createRecord('$3fe288', $3fe288);
           } else {
-            api.reload('$874478', $874478);
+            api.reload('$3fe288', $3fe288);
           }
         }
 
@@ -9851,7 +11915,7 @@ render._withStripped = true
       
       }
     })();
-},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/App.vue":[function(require,module,exports) {
+},{"_css_loader":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/App.vue":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9859,15 +11923,17 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var _axios = _interopRequireDefault(require("axios"));
+
 var _navBar = _interopRequireDefault(require("./components/navBar"));
 
 var _logo = _interopRequireDefault(require("../assets/logo.png"));
 
 var _formImage = _interopRequireDefault(require("./components/formImage"));
 
-var _pic = _interopRequireDefault(require("./components/pic"));
+var _profilePic = _interopRequireDefault(require("./components/profilePic"));
 
-var _formRegister = _interopRequireDefault(require("./components/formRegister"));
+var _profile = _interopRequireDefault(require("./components/profile"));
 
 var _footerItem = _interopRequireDefault(require("./components/footerItem"));
 
@@ -9883,33 +11949,181 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 // bagian ini berisi component mana saja yang ingin kita pakai
+//import formRegister from './components/formRegister';
+//import formLogin from './components/formLogin';
 var _default = {
+  created: function created() {
+    if (localStorage.getItem("token")) {
+      this.isLogin = true;
+      this.isRegister = false;
+      this.getPictures();
+    } else {
+      this.isLogin = false;
+      this.isRegister = true;
+    }
+  },
   data: function data() {
     return {
       // data yang ada di sini akan dipakai oleh setiap komponen
+      isLogin: false,
+      isRegister: true,
+      showProfile: false,
+      user: "",
+      username: "",
+      email: "",
+      password: "",
+      pictures: [],
       logoHome: _logo.default,
-      pic: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIEAAACLCAMAAABx5QoEAAAA51BMVEXx8/Lm5+kjHyAREiQ7JBT427HqyqQAAAD19/bMzs3x06vvzKTguZLs7u4gHB3p6uwtKivQ0dPCqocgAADow5sKCyAYEhQIAAAAABYwEgAlAAC+v8AcFxgAABvd3t8yFgApAAAAAA5RUlssCAAZAACehWooCQDo5uLs49fw4Mu1tbd5eXtVVFWFhYaPkJFBQEA4Njebm5xhYWJra2xGR1EtLjthYmuAd3NrYFtMOzZZSkJjVU1bTk9EMSU8Jx6rqapoUkCvlXfYvpmMdl14YEtbRDH03r7dyLHNqYVPQTM4OUQhIS5vcHkNMqM8AAAHAklEQVR4nO2aiVbiShCGiUbCYmjBIWFNJCijhETCEpW5jriMjsD7P8/tsAmkl8qCnjPHX4eBYHV9qa6uTiedSHzrW9/61j8gGQsh79fTJztHSPALoc9xLhO9f1DsORiyzPC+0h57BOJ+CbEX/+zg+458qn8BpfP++MTLwIm/bJ86gp8xvr7g9j+6KTdv84QwxcTA7IC5tDtRLJfbJNIY/AMGQMJuilhnFqlURA4DPwBIruriXM1bQjJEzUiGY7SYExKaUxGXao60mBFoPYAdC1q6Wm07jvVLL4tr6e+kfAzfExQAhLSHm//uxGalctZs6uKm9HtSFMIiUABkzRIrZZEi/T0+BBqAU6a691Qekc1iA0BWheXfQ7CIpoERaBG44QGI4nmaOIQDIlABmlwAUf9FMQ5EQOmC6ikfABfHKrmORQeY13+A9FtyCAOUJkoplq0zEIH4m1iXAiDQSiEwBLg6P9DOIVofoAdAGi66oU87iUgAgnyr850vEaiNROkDIQEGECvUSR3SDzRbpJ2DCc6JkwMwCFRTlIcTnFIqggAZDzRLaDniEXCDQLdcEeit08opfXrmEvCCQDVcEuit50IykyxcjFuMOYpFwAkCw3CeB/o4ebRU5nEs0iJBmR4hQaDbLcbCOHO0oafncss3RD0qxljgBIG5OEBnYqtwtKPCS7m16b91//iC6wGrHWZNYBom7sWKj+Ao83QxFltlLxR6uXz/nMy+6IyayAkCe32U6OskgmQ2eVy4ePlz/2f8XHjKJJMvuj5iE9CDwCZATpNI4Cmz0Pz9s1422S3RCZhmeDiSY7CjzIXedDiLvXAhwMPxHkZQ1lnlgBUE3jIZjU4BBNnH1h1zMDIIeOtk+eYcRFAZ8VqiFSWOGb5IkkAE5zfcmw5hCbTfAIJkQeKlAY2Af7cECRkAwRMfgJIIfLufrz4AAkH2itsQJRH4dgQAAkEyeclvKhzBJQGASPAWjoCfBmCCZLhEiJHg7asJIKkYjgCaidmfeyO4ghG88lsiEvD7jtgNIQlIBQFAAIxBcn8E0IoEyIOQBMBeABQkIgHkOdZPEAGgobBjQRBABIBofhNEIfCPhhjzAHB9QKoIfgLArBD2+kAgDQY/AaAaRCDwI/gIQADkqzRIAgm+VNgheAUBUAigj9ZfGQSQcuiJsmgCWm+n4yYB5NJkITIAmGBrftgkuAR2JJUAbL+5cNgggKWAJ9q6EU6wgbAmeIMD0G+nwZv4SIbMKgUC8NNvJAUhWCEsCQIB0AngW12wLjMbBD/gSSiEv5O1LXSVzXo3r7I/sI6PAYsUCEGgXExm58Le54ojD4MF4TW7TQC6KliI+ZwF1gxCa4A1wfEbe7/YhjULAHIfBclC+iqT9REc/7hKCxAKzqMmjneEtLbZaYyPCQR/x0rHbGveHzFbYQPQg4DPPaW1rY4qKbUDRXn0EVwoykFNkaSO1dZSjFhwn7aR3csoX7WvFRV7nyvXGBW2CB7vGrnFVzX8V9d2NY9twoSAGAQk5J1eV5GW3leORheF5ILg7/Odsv2lpHR7Tp60OQjwwHHXCgn2iSQpuYNd5RrSwft4PHqvSQ3Ct7hDTmwfA+Th904QkNZV/e2v3NQUpUb99iCndnfvMIOefe/YdFSqB77UTvAQJLaTUXakCAAHB5KzFVMYwDbCdY3vhqHadRiAjVRA+RN6N0OUO9nYjxFgL4y8F4JAm3HQHggC7tHbA0EwgFU/xEgQcltYfARht8bFRhB6e2BcBGF3acZGENJ/whuUcRBE2q0rx0AQbcdySjuJMjXiyfFES0UiwAg9KXwUclIvKgBGSDlq2DCoqpOKDOAxCKakhPCvSKYQh38PIZXuqEEvE2pqJx1LAJYMiWo3UBwUqVtNxOd/zpCq9iX6JeuWcqrUr8Z4/h8Mmn3Nh8Dur21tD/4XDHK1n1NVwtph6V1R1Vy/Ku/J/xIilXZ6eDHirRM+QHLewgEf7Dk4+/bofg0h59tWr9PFKzd80iqGOel2elY7L3+C+w+KlCxo+XTVUzqvCZ7zz/K+hbHWZzv/1rf+QaW+Won0VyshfbUSh1+tOUER/6xUL9YXH4pkg30QFCeDhiHVG8NJo1GSTHvWk6SS1DAldxIXRbG49WGtJcFhfTY1TcN0TXfmuo5pPNjt2YPZdqbTqI6Hw2mpeFgvTYb1YmlYrOPX+nQyGQ4mkwF+HawJDHNmzCZDoz+1ht3+g+VM8UWh1m9EBMDRtWYzd9bHp4b/syau69ozt+caFv61LdcaFBcExcls2B/ODMOYDaamPTBn9rXtmlZUACxjMDAGhjF08Yv3xjAm3iH83sUfB8PiKhNL3k+9Xi/hMDWKpfm/UikGAtzXdS/49WXH1+uLI8XlwcMlwZfq6wn+B7yu+Ld7/tePAAAAAElFTkSuQmCC"
+      pic: ""
     };
   },
+  watch: {
+    isLogin: function isLogin(val) {
+      if (val) {
+        this.getPic();
+      } else {
+        this.pictures = [];
+      }
+    }
+  },
+  methods: {
+    register: function register() {
+      var _this = this;
+
+      console.log(this.email, this.password, this.username);
+      (0, _axios.default)({
+        method: "POST",
+        url: "http://localhost:3000/users/signup",
+        data: {
+          username: this.username,
+          email: this.email,
+          password: this.password
+        }
+      }).then(function (_ref) {
+        var data = _ref.data;
+        Swal.fire({
+          position: 'center',
+          icon: 'success',
+          title: 'Successfully Registered',
+          showConfirmButton: false,
+          timer: 1500
+        });
+        console.log('Successfully registering new user');
+        console.log(data);
+        _this.isRegister = false;
+      }).catch(function (err) {
+        console.log('error while registering new user', err);
+      });
+    },
+    login: function login() {
+      var _this2 = this;
+
+      (0, _axios.default)({
+        method: "POST",
+        url: "http://localhost:3000/users/signin",
+        data: {
+          email: this.email,
+          password: this.password
+        }
+      }).then(function (_ref2) {
+        var data = _ref2.data;
+        Swal.fire({
+          position: 'center',
+          icon: 'success',
+          title: 'Successfully Login',
+          showConfirmButton: false,
+          timer: 1500
+        });
+        console.log('data => ', data);
+        localStorage.setItem("token", data.access_token);
+        _this2.showProfile = true;
+        _this2.isRegister = false;
+        _this2.user = data.username;
+        _this2.isLogin = true;
+        _this2.email = "", _this2.password = "";
+
+        _this2.getPictures();
+      }).catch(function (err) {
+        console.log('error while registering new user', err);
+      });
+    },
+    getPictures: function getPictures() {
+      var _this3 = this;
+
+      console.log('148');
+      (0, _axios.default)({
+        method: 'get',
+        url: 'http://localhost:3000/files/all',
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        console.log('response => ', response);
+        _this3.pictures = response.data;
+        _this3.showProfile = true;
+      }).catch(function (err) {
+        console.log(err);
+      });
+    },
+    logout: function logout() {
+      localStorage.removeItem("token");
+      this.isLogin = false;
+    }
+  },
   components: {
-    // setelah di import harus di daftarin di komponent
     navBar: _navBar.default,
     formImage: _formImage.default,
-    pic: _pic.default,
-    formRegister: _formRegister.default,
+    profile: _profile.default,
+    profilePic: _profilePic.default,
     footerItem: _footerItem.default
   }
 };
 exports.default = _default;
-        var $ef10f3 = exports.default || module.exports;
+        var $57d49d = exports.default || module.exports;
       
-      if (typeof $ef10f3 === 'function') {
-        $ef10f3 = $ef10f3.options;
+      if (typeof $57d49d === 'function') {
+        $57d49d = $57d49d.options;
       }
     
         /* template */
-        Object.assign($ef10f3, (function () {
+        Object.assign($57d49d, (function () {
           var render = function() {
   var _vm = this
   var _h = _vm.$createElement
@@ -9917,11 +12131,192 @@ exports.default = _default;
   return _c(
     "div",
     [
+      _vm.isLogin == false
+        ? _c("div", [
+            _c(
+              "form",
+              {
+                on: {
+                  submit: function($event) {
+                    $event.preventDefault()
+                    return _vm.login($event)
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "form-group" }, [
+                  _c("label", [_vm._v("Email address")]),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.email,
+                        expression: "email"
+                      }
+                    ],
+                    staticClass: "form-control",
+                    attrs: { type: "email", placeholder: "Enter email" },
+                    domProps: { value: _vm.email },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.email = $event.target.value
+                      }
+                    }
+                  })
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "form-group" }, [
+                  _c("label", [_vm._v("Password")]),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.password,
+                        expression: "password"
+                      }
+                    ],
+                    staticClass: "form-control",
+                    attrs: { type: "password", placeholder: "Password" },
+                    domProps: { value: _vm.password },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.password = $event.target.value
+                      }
+                    }
+                  })
+                ]),
+                _vm._v(" "),
+                _c("input", { attrs: { type: "submit", name: "submit" } })
+              ]
+            )
+          ])
+        : _vm._e(),
+      _vm._v(" "),
+      _vm.isRegister
+        ? _c("div", [
+            _c(
+              "form",
+              {
+                on: {
+                  submit: function($event) {
+                    $event.preventDefault()
+                    return _vm.register($event)
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "form-group" }, [
+                  _c("label", [_vm._v("Email address")]),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.email,
+                        expression: "email"
+                      }
+                    ],
+                    staticClass: "form-control",
+                    attrs: { type: "email", placeholder: "Enter email" },
+                    domProps: { value: _vm.email },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.email = $event.target.value
+                      }
+                    }
+                  }),
+                  _vm._v(" "),
+                  _c(
+                    "small",
+                    {
+                      staticClass: "form-text text-muted",
+                      attrs: { id: "emailHelp" }
+                    },
+                    [_vm._v("We'll never share your email with anyone else.")]
+                  )
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "form-group" }, [
+                  _c("label", [_vm._v("Username")]),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.username,
+                        expression: "username"
+                      }
+                    ],
+                    staticClass: "form-control",
+                    attrs: { type: "text", placeholder: "Enter username" },
+                    domProps: { value: _vm.username },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.username = $event.target.value
+                      }
+                    }
+                  })
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "form-group" }, [
+                  _c("label", [_vm._v("Password")]),
+                  _vm._v(" "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.password,
+                        expression: "password"
+                      }
+                    ],
+                    staticClass: "form-control",
+                    attrs: { type: "password", placeholder: "Password" },
+                    domProps: { value: _vm.password },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.password = $event.target.value
+                      }
+                    }
+                  })
+                ]),
+                _vm._v(" "),
+                _c("input", { attrs: { type: "submit", name: "submit" } })
+              ]
+            )
+          ])
+        : _vm._e(),
+      _vm._v(" "),
       _c("navBar", { attrs: { "logo-home": _vm.logoHome } }),
       _vm._v(" "),
       _c("formImage"),
       _vm._v(" "),
-      _c("pic", { attrs: { pic: _vm.pic } }),
+      _c("profilePic", { attrs: { pic: _vm.pic } }),
+      _vm._v(" "),
+      _vm.showProfile
+        ? _c("profile", { attrs: { pictures: _vm.pictures, user: _vm.user } })
+        : _vm._e(),
       _vm._v(" "),
       _c("footerItem")
     ],
@@ -9935,7 +12330,7 @@ render._withStripped = true
             render: render,
             staticRenderFns: staticRenderFns,
             _compiled: true,
-            _scopeId: "data-v-ef10f3",
+            _scopeId: "data-v-57d49d",
             functional: undefined
           };
         })());
@@ -9948,9 +12343,9 @@ render._withStripped = true
         if (api.compatible) {
           module.hot.accept();
           if (!module.hot.data) {
-            api.createRecord('$ef10f3', $ef10f3);
+            api.createRecord('$57d49d', $57d49d);
           } else {
-            api.reload('$ef10f3', $ef10f3);
+            api.reload('$57d49d', $57d49d);
           }
         }
 
@@ -9961,7 +12356,7 @@ render._withStripped = true
       
       }
     })();
-},{"./components/navBar":"src/components/navBar.vue","../assets/logo.png":"assets/logo.png","./components/formImage":"src/components/formImage.vue","./components/pic":"src/components/pic.vue","./components/formRegister":"src/components/formRegister.vue","./components/footerItem":"src/components/footerItem.vue","_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/main.js":[function(require,module,exports) {
+},{"axios":"node_modules/axios/index.js","./components/navBar":"src/components/navBar.vue","../assets/logo.png":"assets/logo.png","./components/formImage":"src/components/formImage.vue","./components/profilePic":"src/components/profilePic.vue","./components/profile":"src/components/profile.vue","./components/footerItem":"src/components/footerItem.vue","_css_loader":"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/main.js":[function(require,module,exports) {
 "use strict";
 
 var _vue = _interopRequireDefault(require("vue"));
@@ -9975,7 +12370,7 @@ new _vue.default({
     return h(_App.default);
   }
 }).$mount('#app');
-},{"vue":"node_modules/vue/dist/vue.runtime.esm.js","./App.vue":"src/App.vue"}],"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"vue":"node_modules/vue/dist/vue.runtime.esm.js","./App.vue":"src/App.vue"}],"../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -10003,7 +12398,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "33509" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44823" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -10179,5 +12574,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js","src/main.js"], null)
+},{}]},{},["../.nvm/versions/node/v10.16.3/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js","src/main.js"], null)
 //# sourceMappingURL=/main.1e43358e.js.map

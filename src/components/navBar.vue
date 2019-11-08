@@ -1,7 +1,7 @@
 <template>
 
   <div>
-    <nav class="navbar navbar-expand-lg navbar-light bg-dark">
+    <nav class="navbar navbar-expand-lg" >
         <img style="cursor: pointer; width : 50px" :src="logoHome" alt="">
         <a class="navbar-brand" href="#">Nama Web</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,7 +18,7 @@
             </li>                    
           </ul>
           <form class="form-inline my-2 my-lg-0">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit" @click.prevent="logout" >Logout</button>
+            <button class="btn my-2 my-sm-0" type="submit" @click.prevent="logout" >Logout</button>
           </form>
         </div>
       </nav>
@@ -44,6 +44,21 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
+nav {
+  background-color: #392F5A;
+}
+a {
+  color: white;
+}
+
+.btn {
+  background-color: white;
+  color: #392F5A;
+}
+
+.btn:hover {
+  color: grey;
+}
 
 </style>
