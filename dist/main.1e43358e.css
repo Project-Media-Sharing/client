@@ -30,6 +30,9 @@ button {
 a {
   color: white;
 }
-footer {
+footer[data-v-874478] {
   position: 'sticky-bottom';
+}
+a[data-v-874478] {
+color: black !important
 }

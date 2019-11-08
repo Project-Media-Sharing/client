@@ -1,7 +1,7 @@
 <template>
 
     <div >
-        <div class="col-sm-10 offset-sm-1 pt-5">
+        <div class="col-sm-10 offset-sm-1 pt-0">
             <div class="row">
                 <div class="col-sm-6">
                     
@@ -45,11 +45,13 @@
                             </div>
 
                         <!-- INI FORM !!!!!!! -->    
-                        <div class="card-footer">
-                            <form @submit.prevent="upload">
-                              <input type="file" name="file" @change="changeFile" ref="myFiles"/>
-                              <input type="submit" val="test">
-                            </form>
+                        <div class="card-footer ">
+                            <div class="input-group"> 
+                                <form @submit.prevent="upload">
+                                <input class="" type="file" name="file" @change="changeFile" ref="myFiles" />
+                                <input type="submit" val="test" class="btn">
+                                </form>
+                            </div>                            
                         </div>
                     </div>
                 </div>
@@ -101,10 +103,10 @@
             </div>
             <!-- Central Modal Warning Demo-->
 
-<div class="text-center">
+<!-- <div class="text-center">
   <a href="" class="btn btn-default btn-rounded" data-toggle="modal" data-target="#ModalWarning">Launch Modal
     Warning <i class="far fa-eye ml-1 text-white"></i></a>
-</div>
+</div> -->
 
 
     </div>

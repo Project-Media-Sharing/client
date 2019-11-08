@@ -5,8 +5,8 @@
     <!-- Login -->
     <div class="container mt-5" >
       <div class="row" >
-        <div class="form-group col-sm-8 offset-sm-2 border rounded py-3" style="background-color:#E9F1F7;" >
-          <div v-if="isLogin==false">
+        <div v-if="isLogin==false" class="form-group col-sm-8 offset-sm-2 border rounded py-3"  >
+          <div >
             <h2 class="text-center" >Login Form</h2>
             <form v-on:submit.prevent="login" >
               <div class="form-group" >
@@ -27,8 +27,8 @@
     <!-- Register -->
     <div class="container mt-5">
       <div class="row">
-        <div class="form-group col-sm-8 offset-sm-2 border rounded py-3" style="background-color:#E9F1F7;">
-          <div v-if="isRegister">
+        <div v-if="isRegister" class="form-group col-sm-8 offset-sm-2 border rounded py-3">
+          <div >
             <h2 class="text-center">Register Form</h2>
             <form v-on:submit.prevent="register">
               <div class="form-group">

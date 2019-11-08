@@ -10924,6 +10924,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 //
 //
 //
+//
+//
 var _default = {
   data: function data() {
     return {
@@ -10985,7 +10987,7 @@ exports.default = _default;
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
   return _c("div", [
-    _c("div", { staticClass: "col-sm-10 offset-sm-1 pt-5" }, [
+    _c("div", { staticClass: "col-sm-10 offset-sm-1 pt-0" }, [
       _c("div", { staticClass: "row" }, [
         _c("div", { staticClass: "col-sm-6" }, [
           _c("div", { staticClass: "card" }, [
@@ -11204,36 +11206,39 @@ exports.default = _default;
               )
             ]),
             _vm._v(" "),
-            _c("div", { staticClass: "card-footer" }, [
-              _c(
-                "form",
-                {
-                  on: {
-                    submit: function($event) {
-                      $event.preventDefault()
-                      return _vm.upload($event)
+            _c("div", { staticClass: "card-footer " }, [
+              _c("div", { staticClass: "input-group" }, [
+                _c(
+                  "form",
+                  {
+                    on: {
+                      submit: function($event) {
+                        $event.preventDefault()
+                        return _vm.upload($event)
+                      }
                     }
-                  }
-                },
-                [
-                  _c("input", {
-                    ref: "myFiles",
-                    attrs: { type: "file", name: "file" },
-                    on: { change: _vm.changeFile }
-                  }),
-                  _vm._v(" "),
-                  _c("input", { attrs: { type: "submit", val: "test" } })
-                ]
-              )
+                  },
+                  [
+                    _c("input", {
+                      ref: "myFiles",
+                      attrs: { type: "file", name: "file" },
+                      on: { change: _vm.changeFile }
+                    }),
+                    _vm._v(" "),
+                    _c("input", {
+                      staticClass: "btn",
+                      attrs: { type: "submit", val: "test" }
+                    })
+                  ]
+                )
+              ])
             ])
           ])
         ])
       ])
     ]),
     _vm._v(" "),
-    _vm._m(2),
-    _vm._v(" "),
-    _vm._m(3)
+    _vm._m(2)
   ])
 }
 var staticRenderFns = [
@@ -11404,28 +11409,6 @@ var staticRenderFns = [
         )
       ]
     )
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "text-center" }, [
-      _c(
-        "a",
-        {
-          staticClass: "btn btn-default btn-rounded",
-          attrs: {
-            href: "",
-            "data-toggle": "modal",
-            "data-target": "#ModalWarning"
-          }
-        },
-        [
-          _vm._v("Launch Modal\n    Warning "),
-          _c("i", { staticClass: "far fa-eye ml-1 text-white" })
-        ]
-      )
-    ])
   }
 ]
 render._withStripped = true
@@ -12098,7 +12081,7 @@ var staticRenderFns = [
                   {
                     attrs: { href: "https://github.com/Project-Media-Sharing" }
                   },
-                  [_vm._v("Project-Media-Sharing")]
+                  [_vm._v("Detexion")]
                 )
               ])
             ])
@@ -12114,7 +12097,7 @@ render._withStripped = true
             render: render,
             staticRenderFns: staticRenderFns,
             _compiled: true,
-            _scopeId: null,
+            _scopeId: "data-v-874478",
             functional: undefined
           };
         })());
@@ -12383,16 +12366,15 @@ exports.default = _default;
       _vm._v(" "),
       _c("div", { staticClass: "container mt-5" }, [
         _c("div", { staticClass: "row" }, [
-          _c(
-            "div",
-            {
-              staticClass:
-                "form-group col-sm-8 offset-sm-2 border rounded py-3",
-              staticStyle: { "background-color": "#E9F1F7" }
-            },
-            [
-              _vm.isLogin == false
-                ? _c("div", [
+          _vm.isLogin == false
+            ? _c(
+                "div",
+                {
+                  staticClass:
+                    "form-group col-sm-8 offset-sm-2 border rounded py-3"
+                },
+                [
+                  _c("div", [
                     _c("h2", { staticClass: "text-center" }, [
                       _vm._v("Login Form")
                     ]),
@@ -12473,24 +12455,23 @@ exports.default = _default;
                       ]
                     )
                   ])
-                : _vm._e()
-            ]
-          )
+                ]
+              )
+            : _vm._e()
         ])
       ]),
       _vm._v(" "),
       _c("div", { staticClass: "container mt-5" }, [
         _c("div", { staticClass: "row" }, [
-          _c(
-            "div",
-            {
-              staticClass:
-                "form-group col-sm-8 offset-sm-2 border rounded py-3",
-              staticStyle: { "background-color": "#E9F1F7" }
-            },
-            [
-              _vm.isRegister
-                ? _c("div", [
+          _vm.isRegister
+            ? _c(
+                "div",
+                {
+                  staticClass:
+                    "form-group col-sm-8 offset-sm-2 border rounded py-3"
+                },
+                [
+                  _c("div", [
                     _c("h2", { staticClass: "text-center" }, [
                       _vm._v("Register Form")
                     ]),
@@ -12613,9 +12594,9 @@ exports.default = _default;
                       ]
                     )
                   ])
-                : _vm._e()
-            ]
-          )
+                ]
+              )
+            : _vm._e()
         ])
       ]),
       _vm._v(" "),
@@ -12712,7 +12693,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36119" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "42299" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
