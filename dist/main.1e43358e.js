@@ -11524,20 +11524,13 @@ render._withStripped = true
       
       }
     })();
-},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/profile.vue":[function(require,module,exports) {
+},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/cardImage.vue":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-
-var _axios = _interopRequireDefault(require("axios"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-//
-//
 //
 //
 //
@@ -11603,11 +11596,308 @@ var _default = {
       hrefTwitter: "https://twitter.com/intent/tweet?text=checkout+my+pic+$" + this.picUrl
     };
   },
+  props: ["pic"],
+  methods: {
+    getAge: function getAge(id) {
+      var _this = this;
+
+      console.log("ini id", id);
+      axios({
+        method: "get",
+        url: "http://localhost:3000/files/".concat(id, "/image-age"),
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        if (!response.data.faces.length) {
+          Swal.fire({
+            position: "center",
+            icon: 'error',
+            title: "We could not detect any human faces!",
+            showConfirmButton: false,
+            timer: 2000
+          });
+        }
+
+        _this.age = response.data.faces[0].age.toFixed();
+      }).catch(function (err) {
+        console.log(err);
+      });
+    },
+    getKeywords: function getKeywords(id) {
+      var _this2 = this;
+
+      axios({
+        method: "get",
+        url: "http://localhost:3000/files/".concat(id, "/image-keywords"),
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        var arr = [];
+        var keywords = response.data.keywords;
+
+        for (var i = 0; i < 5; i++) {
+          arr.push(keywords[i].keyword);
+        }
+
+        _this2.keywords = arr;
+      }).catch(function (err) {
+        console.log(err);
+      });
+    },
+    getQuality: function getQuality(id) {
+      var _this3 = this;
+
+      axios({
+        method: "get",
+        url: "http://localhost:3000/files/".concat(id, "/image-quality"),
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        _this3.quality = response.data.quality.score;
+        console.log("ini response getQuality", _this3.quality);
+      }).catch(function (err) {
+        console.log(err);
+      });
+    },
+    deletePic: function deletePic(id) {
+      var _this4 = this;
+
+      axios({
+        method: "delete",
+        url: "http://localhost:3000/files/".concat(id, "/delete"),
+        headers: {
+          token: localStorage.getItem("token")
+        }
+      }).then(function (response) {
+        _this4.$emit("getPicture");
+
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: "Successfully Delete Picture",
+          showConfirmButton: false,
+          timer: 1500
+        });
+      }).catch(function (err) {
+        console.log(err);
+      });
+    }
+  }
+};
+exports.default = _default;
+        var $ff966f = exports.default || module.exports;
+      
+      if (typeof $ff966f === 'function') {
+        $ff966f = $ff966f.options;
+      }
+    
+        /* template */
+        Object.assign($ff966f, (function () {
+          var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c("div", { staticClass: "card-body" }, [
+    _c("div", { staticClass: "card", attrs: { picUrl: _vm.pic.id } }, [
+      _c("img", {
+        staticClass: "card-img-top",
+        attrs: { src: _vm.pic.url, alt: "image" }
+      }),
+      _vm._v(" "),
+      _c("div", { staticClass: "card-body" }, [
+        _c("div", { staticClass: "row" }, [
+          _c("div", { staticClass: "col", attrs: { id: "pic-age" } }, [
+            _c("strong", [_vm._v("Detected age: " + _vm._s(_vm.age))])
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "col", attrs: { id: "pic-keywords" } }, [
+            _c("strong", [_vm._v("Detected keywords:")]),
+            _vm._v(" "),
+            _c(
+              "ul",
+              _vm._l(_vm.keywords, function(keyword) {
+                return _c("div", { key: keyword.id }, [
+                  _c("li", [_c("strong", [_vm._v(_vm._s(keyword))])])
+                ])
+              }),
+              0
+            )
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "col", attrs: { id: "pic-quality" } }, [
+            _c("strong", [
+              _vm._v(
+                "Picture quality: " +
+                  _vm._s((Number(_vm.quality) * 100).toFixed()) +
+                  " %"
+              )
+            ])
+          ])
+        ]),
+        _vm._v(" "),
+        _c("div", { staticClass: "col" }, [
+          _c(
+            "button",
+            {
+              staticClass: "btn btn-info",
+              on: {
+                click: function($event) {
+                  return _vm.getAge(_vm.pic._id)
+                }
+              }
+            },
+            [
+              _c("span", { staticClass: "fa fa-plus-circle" }),
+              _vm._v("Get Age\n          ")
+            ]
+          ),
+          _vm._v(" "),
+          _c(
+            "button",
+            {
+              staticClass: "btn btn-info",
+              on: {
+                click: function($event) {
+                  return _vm.getKeywords(_vm.pic._id)
+                }
+              }
+            },
+            [
+              _c("span", { staticClass: "fa fa-user" }),
+              _vm._v("Get Keywords\n          ")
+            ]
+          ),
+          _vm._v(" "),
+          _c(
+            "button",
+            {
+              staticClass: "btn btn-info",
+              on: {
+                click: function($event) {
+                  return _vm.getQuality(_vm.pic._id)
+                }
+              }
+            },
+            [
+              _c("span", { staticClass: "fa fa-user" }),
+              _vm._v("Get quality\n          ")
+            ]
+          ),
+          _vm._v(" "),
+          _c(
+            "button",
+            {
+              staticClass: "btn btn-danger",
+              on: {
+                click: function($event) {
+                  return _vm.deletePic(_vm.pic._id)
+                }
+              }
+            },
+            [
+              _c("span", { staticClass: "fa fa-user" }),
+              _vm._v("Delete\n          ")
+            ]
+          ),
+          _vm._v(" "),
+          _c("button", { staticClass: "btn btn-info" }, [
+            _c(
+              "a",
+              {
+                attrs: {
+                  href:
+                    "https://twitter.com/intent/tweet?text=checkout+my+pic " +
+                    _vm.pic.url,
+                  onclick:
+                    "javascript:window.open(this.href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=600,width=600');return false;"
+                }
+              },
+              [_vm._v("Tweet")]
+            )
+          ])
+        ])
+      ])
+    ])
+  ])
+}
+var staticRenderFns = []
+render._withStripped = true
+
+          return {
+            render: render,
+            staticRenderFns: staticRenderFns,
+            _compiled: true,
+            _scopeId: null,
+            functional: undefined
+          };
+        })());
+      
+    /* hot reload */
+    (function () {
+      if (module.hot) {
+        var api = require('vue-hot-reload-api');
+        api.install(require('vue'));
+        if (api.compatible) {
+          module.hot.accept();
+          if (!module.hot.data) {
+            api.createRecord('$ff966f', $ff966f);
+          } else {
+            api.reload('$ff966f', $ff966f);
+          }
+        }
+
+        
+        var reloadCSS = require('_css_loader');
+        module.hot.dispose(reloadCSS);
+        module.hot.accept(reloadCSS);
+      
+      }
+    })();
+},{"_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/profile.vue":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _axios = _interopRequireDefault(require("axios"));
+
+var _cardImage = _interopRequireDefault(require("./cardImage.vue"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+var _default = {
+  data: function data() {
+    return {
+      age: "",
+      keywords: "",
+      quality: "",
+      picUrl: "",
+      hrefTwitter: "https://twitter.com/intent/tweet?text=checkout+my+pic+$" + this.picUrl
+    };
+  },
   props: ["pictures", "user"],
   methods: {
     getAge: function getAge(id) {
       var _this = this;
 
+      console.log("ini id", id);
       (0, _axios.default)({
         method: "get",
         url: "http://localhost:3000/files/".concat(id, "/image-age"),
@@ -11679,7 +11969,13 @@ var _default = {
       }).catch(function (err) {
         console.log(err);
       });
+    },
+    getPicture: function getPicture() {
+      this.$emit("getPicture");
     }
+  },
+  components: {
+    cardImage: _cardImage.default
   }
 };
 exports.default = _default;
@@ -11699,127 +11995,17 @@ exports.default = _default;
     "div",
     { staticClass: "card-columns" },
     _vm._l(_vm.pictures, function(pic) {
-      return _c("div", { key: pic.id }, [
-        _c("div", { staticClass: "card", attrs: { picUrl: pic.id } }, [
-          _c("img", {
-            staticClass: "card-img-top",
-            attrs: { src: pic.url, alt: "image" }
-          }),
-          _vm._v(" "),
-          _c("div", { staticClass: "card-body" }, [
-            _c("div", { staticClass: "row" }, [
-              _c("div", { staticClass: "col", attrs: { id: "pic-age" } }, [
-                _c("strong", [_vm._v("Detected age: " + _vm._s(_vm.age))])
-              ]),
-              _vm._v(" "),
-              _c("div", { staticClass: "col", attrs: { id: "pic-keywords" } }, [
-                _c("strong", [_vm._v("Detected keywords:")]),
-                _vm._v(" "),
-                _c(
-                  "ul",
-                  _vm._l(_vm.keywords, function(keyword) {
-                    return _c("div", { key: keyword.id }, [
-                      _c("li", [_c("strong", [_vm._v(_vm._s(keyword))])])
-                    ])
-                  }),
-                  0
-                )
-              ]),
-              _vm._v(" "),
-              _c("div", { staticClass: "col", attrs: { id: "pic-quality" } }, [
-                _c("strong", [
-                  _vm._v(
-                    "Picture quality: " +
-                      _vm._s((Number(_vm.quality) * 100).toFixed())
-                  )
-                ])
-              ])
-            ]),
-            _vm._v(" "),
-            _c("div", { staticClass: "col" }, [
-              _c(
-                "button",
-                {
-                  staticClass: "btn btn-info",
-                  on: {
-                    click: function($event) {
-                      return _vm.getAge(pic._id)
-                    }
-                  }
-                },
-                [
-                  _c("span", { staticClass: "fa fa-plus-circle" }),
-                  _vm._v("Get Age\n          ")
-                ]
-              ),
-              _vm._v(" "),
-              _c(
-                "button",
-                {
-                  staticClass: "btn btn-info",
-                  on: {
-                    click: function($event) {
-                      return _vm.getKeywords(pic._id)
-                    }
-                  }
-                },
-                [
-                  _c("span", { staticClass: "fa fa-user" }),
-                  _vm._v("Get Keywords\n          ")
-                ]
-              ),
-              _vm._v(" "),
-              _c(
-                "button",
-                {
-                  staticClass: "btn btn-info",
-                  on: {
-                    click: function($event) {
-                      return _vm.getQuality(pic._id)
-                    }
-                  }
-                },
-                [
-                  _c("span", { staticClass: "fa fa-user" }),
-                  _vm._v("Get quality\n          ")
-                ]
-              ),
-              _vm._v(" "),
-              _c(
-                "button",
-                {
-                  staticClass: "btn btn-danger",
-                  on: {
-                    click: function($event) {
-                      return _vm.deletePic(pic._id)
-                    }
-                  }
-                },
-                [
-                  _c("span", { staticClass: "fa fa-user" }),
-                  _vm._v("Delete\n          ")
-                ]
-              ),
-              _vm._v(" "),
-              _c("button", { staticClass: "btn btn-info" }, [
-                _c(
-                  "a",
-                  {
-                    attrs: {
-                      href:
-                        "https://twitter.com/intent/tweet?text=checkout+my+pic " +
-                        pic.url,
-                      onclick:
-                        "javascript:window.open(this.href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=600,width=600');return false;"
-                    }
-                  },
-                  [_vm._v("Tweet")]
-                )
-              ])
-            ])
-          ])
-        ])
-      ])
+      return _c(
+        "div",
+        { key: pic.id },
+        [
+          _c("cardImage", {
+            attrs: { pic: pic },
+            on: { getPicture: _vm.getPicture }
+          })
+        ],
+        1
+      )
     }),
     0
   )
@@ -11857,7 +12043,7 @@ render._withStripped = true
       
       }
     })();
-},{"axios":"node_modules/axios/index.js","_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/footerItem.vue":[function(require,module,exports) {
+},{"axios":"node_modules/axios/index.js","./cardImage.vue":"src/components/cardImage.vue","_css_loader":"../../.nvm/versions/node/v13.0.1/lib/node_modules/parcel-bundler/src/builtins/css-loader.js","vue-hot-reload-api":"node_modules/vue-hot-reload-api/dist/index.js","vue":"node_modules/vue/dist/vue.runtime.esm.js"}],"src/components/footerItem.vue":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -12067,7 +12253,10 @@ var _default = {
       password: "",
       pictures: [],
       logoHome: _logo.default,
-      pic: ""
+      pic: "",
+      email_register: "",
+      password_register: "",
+      username_register: ""
     };
   },
   watch: {
@@ -12088,9 +12277,9 @@ var _default = {
         method: "POST",
         url: "http://localhost:3000/users/signup",
         data: {
-          username: this.username,
-          email: this.email,
-          password: this.password
+          username: this.username_register,
+          email: this.email_register,
+          password: this.password_register
         }
       }).then(function (_ref) {
         var data = _ref.data;
@@ -12325,8 +12514,8 @@ exports.default = _default;
                               {
                                 name: "model",
                                 rawName: "v-model",
-                                value: _vm.email,
-                                expression: "email"
+                                value: _vm.email_register,
+                                expression: "email_register"
                               }
                             ],
                             staticClass: "form-control",
@@ -12334,13 +12523,13 @@ exports.default = _default;
                               type: "email",
                               placeholder: "Enter email"
                             },
-                            domProps: { value: _vm.email },
+                            domProps: { value: _vm.email_register },
                             on: {
                               input: function($event) {
                                 if ($event.target.composing) {
                                   return
                                 }
-                                _vm.email = $event.target.value
+                                _vm.email_register = $event.target.value
                               }
                             }
                           }),
@@ -12367,8 +12556,8 @@ exports.default = _default;
                               {
                                 name: "model",
                                 rawName: "v-model",
-                                value: _vm.username,
-                                expression: "username"
+                                value: _vm.username_register,
+                                expression: "username_register"
                               }
                             ],
                             staticClass: "form-control",
@@ -12376,13 +12565,13 @@ exports.default = _default;
                               type: "text",
                               placeholder: "Enter username"
                             },
-                            domProps: { value: _vm.username },
+                            domProps: { value: _vm.username_register },
                             on: {
                               input: function($event) {
                                 if ($event.target.composing) {
                                   return
                                 }
-                                _vm.username = $event.target.value
+                                _vm.username_register = $event.target.value
                               }
                             }
                           })
@@ -12396,8 +12585,8 @@ exports.default = _default;
                               {
                                 name: "model",
                                 rawName: "v-model",
-                                value: _vm.password,
-                                expression: "password"
+                                value: _vm.password_register,
+                                expression: "password_register"
                               }
                             ],
                             staticClass: "form-control",
@@ -12405,13 +12594,13 @@ exports.default = _default;
                               type: "password",
                               placeholder: "Password"
                             },
-                            domProps: { value: _vm.password },
+                            domProps: { value: _vm.password_register },
                             on: {
                               input: function($event) {
                                 if ($event.target.composing) {
                                   return
                                 }
-                                _vm.password = $event.target.value
+                                _vm.password_register = $event.target.value
                               }
                             }
                           })
@@ -12523,7 +12712,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "37303" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36119" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -33,7 +33,7 @@
             <form v-on:submit.prevent="register">
               <div class="form-group">
                 <label>Email address</label>
-                <input type="email" class="form-control" placeholder="Enter email" v-model="email" />
+                <input type="email" class="form-control" placeholder="Enter email" v-model="email_register" />
                 <small
                   id="emailHelp"
                   class="form-text text-muted"
@@ -41,11 +41,11 @@
               </div>
               <div class="form-group">
                 <label>Username</label>
-                <input type="text" class="form-control" placeholder="Enter username" v-model="username" />
+                <input type="text" class="form-control" placeholder="Enter username" v-model="username_register" />
               </div>
               <div class="form-group">
                 <label>Password</label>
-                <input type="password" class="form-control" placeholder="Password" v-model="password" />
+                <input type="password" class="form-control" placeholder="Password" v-model="password_register" />
               </div>
               <input type="submit" name="submit"  class="btn "/>
             </form>
@@ -96,7 +96,10 @@ export default {
       password: "",
       pictures: [],
       logoHome: srcLogo,
-      pic: ""
+      pic: "",
+      email_register: "",
+      password_register: "",
+      username_register: ""
     };
   },
   watch: {
@@ -115,9 +118,9 @@ export default {
         method: "POST",
         url: "http://localhost:3000/users/signup",
         data: {
-          username: this.username,
-          email: this.email,
-          password: this.password
+          username: this.username_register,
+          email: this.email_register,
+          password: this.password_register
         }
       })
         .then(({ data }) => {
